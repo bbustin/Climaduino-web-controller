@@ -1,0 +1,43 @@
+{% extends "base_template.html" %}
+{% block title %}Climaduino Settings{% endblock %}
+{% block header %}
+<a href="javascript:location.reload(true);" data-icon="refresh">Refresh</a>
+<h1>Climaduino</h1>
+{% endblock %}
+{% block content %}
+		   <div class="ui-grid-a">
+	        	<div class="ui-block-a">
+	        		{% if settings.mode == 0 or settings.mode == 5 %}
+	        		<h3 align="center">Temperature</h3>
+	        		<a href="{% url 'settings:temperature' %}" data-role="button"><h1>{{ readings.temperature }}º</h1><hr /><h4>{{ settings.temperature }}º</h4></a>
+	        		{% endif %}
+					{% if settings.mode == 1 or settings.mode == 9 %}
+	        		<h3 align="center">Temperature</h3>
+	        		<div data-role="button" data-theme="a"><h1>{{ readings.temperature }}º</h1><hr /><h4>-</h4></div>
+	        		{% endif %}
+
+				</div>
+				<div class="ui-block-b">
+					{% if settings.mode == 0 or settings.mode == 1 %}
+					<h3 align="center">Humidity</h3>
+					<a href="{% url 'settings:humidity' %}" data-role="button"><h1>{{ readings.humidity }}%</h1><hr /><h4>{{ settings.humidity }}%</h4></a>
+					{% endif %}
+					{% if settings.mode == 5 or settings.mode == 9 %}
+					<h3 align="center">Humidity</h3>
+					<div data-role="button" data-theme="a"><h1>{{ readings.humidity }}%</h1><hr /><h4>-</h4></div>
+					{% endif %}
+				</div>
+			</div>
+		     
+			<form action="{% url 'settings:index' %}" method="post">
+				{% csrf_token %}
+				{{ form.as_p }}
+				<input type="submit" value="Submit" />
+			</form>
+
+			<!-- Experimental:
+	       	<div data-role="controlgroup" data-type="horizontal">
+        		<a href="{% url 'settings:temperature' %}" data-rel="dialog" data-role="button"><p>Temperature</p>{{ readings.temperature }}º<hr />{{ settings.temperature }}º</a>
+        		<a href="{% url 'settings:humidity' %}" data-rel="dialog" data-role="button"><p>Humidity</p> {{ readings.humidity }}% <hr /> {{ settings.humidity }}%</a>
+        	</div> -->
+{% endblock %}

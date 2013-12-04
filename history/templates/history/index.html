@@ -1,0 +1,16 @@
+{% extends "base_template.html" %}
+{% block title %}Climaduino History{% endblock %}
+{% block header %}
+				<a href="javascript:location.reload(true);" data-icon="refresh">Refresh</a>
+				<h1>Climaduino</h1>
+{% endblock %}
+{% block content %}
+				<div data-role="collapsible-set">
+					{% for graph in graphs %}
+					<div data-role="collapsible" data-collapsed="true">
+						<h3>{{ graph }}</h3>
+						<img src="/static/{{ graph }}" />
+					</div>
+					{% endfor %}
+				</div>
+{% endblock %}
