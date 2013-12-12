@@ -69,11 +69,9 @@ def log_data():
 	while 1:
 		data = (yield)
 		try:
-			error = rrdtool.update(rrd_file, "N:%f:%f:%f:%f" % (data["readings"]["temp"], data["parameters"]["temp"], data["readings"]["humidity"], data["parameters"]["humidity"]))
-			if error:
-				raise Exception(rrdtool.error())
-		except KeyError:
-			pass
+			rrdtool.update(rrd_file, "N:%f:%f:%f:%f" % (data["readings"]["temp"], data["parameters"]["temp"], data["readings"]["humidity"], data["parameters"]["humidity"]))
+		except (KeyError, rrdtool.error) as details:
+			print(details)
 
 @coroutine
 def display_data():

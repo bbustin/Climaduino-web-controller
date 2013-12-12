@@ -23,6 +23,7 @@ import time, datetime
 def main(queue, interval_in_seconds=300):
 	'''Queue is used to communicate with the climaduino_controller. Interval is
 	   how often to check the database for program settings.'''
+	   # BUG: Does not work when program set to change parameters on midnight (00:00)
 	print("Climaduino Programming Sentry Active")
 	while 1:
 	   	now = datetime.datetime.now()
@@ -35,6 +36,7 @@ def main(queue, interval_in_seconds=300):
 
 	   	# calculate the time minus interval_in_seconds
 	   	earliest_time = now - datetime.timedelta(seconds=interval_in_seconds)
+	   	earliest_time = earliest_time.time()
 
 	   	# query DB with interval_in_seconds "fudge factor"
 	   	program_query = Program.objects.filter(mode=current_settings.mode, day=current_day, time__range=(earliest_time, current_time))
