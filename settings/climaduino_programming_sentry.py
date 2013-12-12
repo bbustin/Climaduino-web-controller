@@ -23,7 +23,8 @@ import time, datetime
 def main(queue, interval_in_seconds=300):
 	'''Queue is used to communicate with the climaduino_controller. Interval is
 	   how often to check the database for program settings.'''
-	   # BUG: Does not work when program set to change parameters on midnight (00:00)
+	   # BUG: Does not work when interval wraps around between days. If interval is 5 minutes
+	   # then times between 23:55 and 00:00 (midnight) do not work properly
 	print("Climaduino Programming Sentry Active")
 	while 1:
 	   	now = datetime.datetime.now()
