@@ -133,6 +133,8 @@ def broadcast(targets):
 
 def main(queue):
 	import Queue
+	# set process niceness value to lower its priority
+	os.nice(1)
 	try:
 	  with open(rrd_file):
 	   	print("Database Exists")

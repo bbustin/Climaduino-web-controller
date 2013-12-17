@@ -53,7 +53,7 @@ controller_process.daemon = True
 controller_process.start()
 
 import climaduino_programming_sentry
-program_process = multiprocessing.Process(target=climaduino_programming_sentry.main, name="Programming Sentry", args=[queue, 300])
+program_process = multiprocessing.Process(target=climaduino_programming_sentry.main, name="Programming Sentry", args=[queue, 60])
 program_process.daemon = True
 program_process.start()
 
