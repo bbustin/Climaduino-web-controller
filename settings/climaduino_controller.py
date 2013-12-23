@@ -131,6 +131,21 @@ def broadcast(targets):
 		for target in targets:
 			target.send(data)
 
+def connect_over_serial(serial_port=None, retry_interval=15):
+	if serial_port:
+		serial_port.close()
+	connected = False
+	while not connected:
+		try:
+			serial_port = serial.Serial("/dev/ttyACM0", 9600, timeout=0) #open in non-blocking mode
+		except (serial.SerialException, OSError) as e:
+			print("Error connecting over serial. Trying again in %d seconds." % retry_interval)
+		else:
+			connected = True
+			print("Climaduino controller using serial port: %s" % serial_port.name)
+			return(serial_port)
+		time.sleep(retry_interval)
+
 def main(queue):
 	import Queue
 	# set process niceness value to lower its priority
@@ -143,12 +158,10 @@ def main(queue):
 	  create_database()
 
 	try:
-		serial_port = serial.Serial("/dev/ttyACM0", 9600, timeout=0) #open in non-blocking mode
-	except serial.SerialException, e:
+		serial_port = connect_over_serial()
+	except (serial.SerialException, OSError) as e:
 		raise e
 	else:
-		print("Climaduino controller using serial port: %s" % serial_port.name)
-
 		unserialize = unserialize_data(broadcast([log_data(), update_database()])) #instantiate unserialize coroutine and broadcast result to logger and update_database
 		# comment out the previous line and uncomment the next line if you would like text output of the current readings from the controller
 		#unserialize = unserialize_data(broadcast([log_data(), update_database(), display_data()])) #instantiate unserialize coroutine and broadcast result to logger and update_database
@@ -160,8 +173,13 @@ def main(queue):
 		last_serial_read = None
 		while 1:
 			if last_serial_read == None or (time.time() - last_serial_read > 4): # only check Serial port at most every 4 seconds
-				line = serial_port.readline()
-				last_serial_read = time.time()
+				# try to read from serial. If there is a problem, re-connect
+				try:
+					line = serial_port.readline()
+					last_serial_read = time.time()
+				except (serial.SerialException, OSError) as e:
+					print(e)
+					serial_port = connect_over_serial(serial_port)
 				if line:
 					unserialize.send(line)
 			try:
@@ -169,11 +187,22 @@ def main(queue):
 			except Queue.Empty:
 				pass
 			else:
-				print(parameter)
-				serial_port.write(str(parameter))
+				# try to read from serial. If there is a problem, re-connect
+				try:
+					serial_port.write(str(parameter))
+				except (serial.SerialException, OSError) as e:
+					print(e)
+					serial_port = connect_over_serial(serial_port)
+					# try to write one more time after reconnecting
+					serial_port.write(str(parameter))
+				else:
+					print(parameter)
 			time.sleep(.25)
 	finally:
-		serial_port.close()
+		try:
+			serial_port.close()
+		except UnboundLocalError:
+			pass
 
 # if called directly from the command line, then execute the main() function
 if __name__ == "__main__":
