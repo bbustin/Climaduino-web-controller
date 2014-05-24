@@ -1,0 +1,19 @@
+{% extends "base_template.html" %}
+{% block title %}Climaduino Programs{% endblock %}
+{% block header %}
+				<h1>{{device.name}}</h1>
+				<a href="{% url 'settings:index' %}" data-icon="grid" class='ui-btn-right'>Zones</a>
+{% endblock %}
+{% block content %}
+				Not complete. Visit the <a href="/admin/settings/program" data-ajax="false">admin interface</a> for additional functionality such as modifying or deleting programs.
+				<ul>
+				{% for program in programs %}
+					<li>{{ program }}</li>
+				{% endfor %}
+				</ul>
+				<form action="{% url 'settings:programs' device.identifier %}" method="post">
+					{% csrf_token %}
+					{{ form.as_p }}
+					<input type="submit" value="Submit" />
+				</form>
+{% endblock %}

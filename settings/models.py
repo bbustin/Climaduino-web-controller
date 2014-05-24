@@ -1,8 +1,19 @@
 from django.db import models
+try:
+	import rrdtool_log
+except ImportError:
+	pass
+
+class Device(models.Model):
+	identifier = models.IntegerField(primary_key=True)
+	name = models.CharField("device name", max_length=30)
+	def __unicode__(self):
+		return("%s (%d)" % (self.name, self.identifier))
 
 class Setting(models.Model):
+	device = models.ForeignKey("Device")
 	time = models.DateTimeField('last change')
-	source_choices = ((0, 'Controller'),(1, 'Web Interface'), (3, 'Program'))
+	source_choices = ((0, 'Climaduino'),(1, 'Controller'), (3, 'Program'))
 	source = models.IntegerField('source of last change', choices=source_choices, default=0)
 	mode_choices = ((0, 'Cooling/Humidity Control'), (1, 'Humidity Control'), (5, 'Heating'), (9, 'Off'))
 	mode = models.IntegerField(choices=mode_choices, default=0)
@@ -12,13 +23,22 @@ class Setting(models.Model):
 		return("%s - \n\tmode: %d\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.mode, self.temperature, self.humidity))
 
 class Reading(models.Model):
+	device = models.ForeignKey("Device")
 	time = models.DateTimeField('last change')
 	temperature = models.IntegerField()
 	humidity = models.IntegerField()
 	def __unicode__(self):
 		return("%s - Readings:\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.temperature, self.humidity))
+	# overriding save so we can also log to rrdtool in addition to updating the DB
+	def save(self, *args, **kwargs):
+		try:
+			rrdtool_log.main(self.device.identifier, self.temperature, self.humidity)
+		except NameError:
+			print("unable to log to rrdtool")
+		super(Reading, self).save(*args, **kwargs) # save the DB record
 
 class Program(models.Model):
+	device = models.ForeignKey("Device")
 	mode_choices = ((0, 'Cooling/Humidity Control'), (1, 'Humidity Control'), (5, 'Heating'), (9, 'Off'))
 	mode = models.IntegerField(choices=mode_choices, default=0)
 	time = models.TimeField()
@@ -27,35 +47,7 @@ class Program(models.Model):
 	temperature = models.IntegerField()
 	humidity = models.IntegerField()
 	def __unicode__(self):
-		return("%s, %s - Program:\n\ttemperature: %d\n\thumidity: %d" % (self.day, self.time, self.temperature, self.humidity))
-	# prevent creating more than 1 program for any specific day of week/time combination
+		return("%s at %s, %s, temperature: %d humidity: %d" % (self.get_day_display(), self.time, self.get_mode_display(), self.temperature, self.humidity))
+	# prevent creating more than 1 program for any specific day of week/time combination for any device
 	class Meta:
-		unique_together = ('mode', 'day', 'time',)
-
-## Trying to create a controller thread slowed down page generation responsiveness dramatically
-# Maybe not the right place for this, but import the threading library and climaduiono-controller
-# then thread out the main() function of climaduiono-controller
-# import threading, climaduino_controller
-# thread = threading.Thread(target=climaduino_controller.main)
-# thread.setDaemon(True)
-# thread.start()
-
-# Create a process running the climaduino controller
-import multiprocessing
-
-
-# uncomment only one of the next two lines depending on whether in production mode or not
-#import climaduino_controller_mock as climaduino_controller #for debugging on a different system
-import climaduino_controller #for production
-queue = multiprocessing.Queue()
-controller_process = multiprocessing.Process(target=climaduino_controller.main, name="Climaduino Controller", args=[queue])
-controller_process.daemon = True
-controller_process.start()
-
-import climaduino_programming_sentry
-program_process = multiprocessing.Process(target=climaduino_programming_sentry.main, name="Programming Sentry", args=[queue, 60])
-program_process.daemon = True
-program_process.start()
-
-def change_parameter(parameter):
-	queue.put(parameter)
+		unique_together = ('device', 'mode', 'day', 'time',)

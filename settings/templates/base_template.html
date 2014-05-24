@@ -11,7 +11,9 @@
 		<div data-role="page" data-theme="b">
  
 	        <div data-role="header" data-position="fixed">
-	            {% block header %}<h1>Climaduino</h1>{% endblock %}
+	            {% block header %}<h1>Climaduino</h1>
+	            <a href="{% url 'settings:index' %}" data-icon="gear">Zones</a>
+	            {% endblock %}
 	        </div><!-- /header -->
 
 	        <div data-role="content">
@@ -20,8 +22,9 @@
 	 
 	        <div data-role="footer" data-position="fixed">
 	            {% block footer %}
-            	<a href="{% url 'settings:index' %}" data-icon="gear">Settings</a>
-            	<a href="{% url 'history:index' %}" data-icon="info">History</a>
+            	<a href="{% url 'settings:device_index' device.identifier %}" data-icon="gear">Settings</a>
+            	<a href="{% url 'settings:programs' device.identifier %}" data-icon="grid">Programs</a>
+            	<a href="{% url 'history:index' device.identifier %}" data-icon="info">History</a>
 	            {% endblock %}
 	        </div><!-- /footer -->
  
