@@ -29,7 +29,6 @@ class ProgrammingForm(ModelForm):
 		model = Program
 		fields = ['mode', 'day', 'time', 'temperature', 'humidity']
 
-@csrf_exempt
 def device_index(request, device_id):
 	device = Device.objects.get(pk=device_id)
 	setting = Setting.objects.filter(device__pk=device_id).last()
@@ -110,19 +109,31 @@ def programs(request, device_id):
 	
 @csrf_exempt
 def climaduino(request, device_id):
-	setting = Setting.objects.filter(device__pk=device_id).last()
 	if request.method == 'POST':
+		# if the device record does not exist, create it
+		try:
+			device = Device.objects.get(pk=device_id)
+		except Device.DoesNotExist:
+			device = Device(identifier=device_id, name="unnamed-%s" % device_id)
+			device.save()
+
 		update_time = timezone.now()
-		print 'Device ID: %s' % device_id
-		print 'Data: %s' % request.body
+
+		setting = Setting.objects.filter(device__pk=device_id).last()
+		if not setting:
+			setting = Setting(device_id=device_id, time=update_time, source=1, mode=9, temperature=77, humidity=55)
+
+		# print 'Device ID: %s' % device_id
+		# print 'Data: %s' % request.body
 		try:
 			json_object = json.loads(request.body)
 		except ValueError:
-			print("Not valid JSON")
+			# print("Not valid JSON")
 			json_object = None
 		else:
 			print('JSON: %s' % json_object)
-		print('Previous Setting: %s' % setting)
+			pass
+
 		response_string = "^" #delimeter to indicate this is where Climaduino should start its parsing
 		# if we get valid data from the Climaduino
 		if json_object:
@@ -136,18 +147,17 @@ def climaduino(request, device_id):
 				 	response_string = "%s%sF" % (response_string, setting.temperature)
 				if setting.humidity != json_object['parameters']['humidity']:
 					response_string = "%s%s%%" % (response_string, setting.humidity)
+			# log settings (to rrdtool)
+			setting.save()
+
 			# update the current readings
-			# Round current temperature and humidity readings
-			temperature_rounded = round(json_object["readings"]["temp"])
-			humidity_rounded = round(json_object["readings"]["humidity"])
-			try:
-				reading = Reading.objects.filter(device__pk=device_id).last()
-			except Reading.DoesNotExist:
-				reading = Reading(device_id=device_id, time=update_time, temperature=temperature_rounded, humidity=humidity_rounded)
-			else:
+			reading = Reading.objects.filter(device__pk=device_id).last()
+			if reading:
 				reading.time = update_time
-				reading.temperature = temperature_rounded
-				reading.humidity = humidity_rounded
+				reading.temperature = json_object["readings"]["temp"]
+				reading.humidity = json_object["readings"]["humidity"]
+			else:
+				reading = Reading(device_id=device_id, time=update_time, temperature=json_object["readings"]["temp"], humidity=json_object["readings"]["humidity"])
 			reading.save()
 
 	return(HttpResponse(response_string))

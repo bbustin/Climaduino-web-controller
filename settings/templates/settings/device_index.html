@@ -12,7 +12,7 @@
 	        		<h3 align="center">Temperature</h3>
 	        		<a href="{% url 'settings:temperature' device.identifier %}" data-role="button"><h1>{{ readings.temperature }}º</h1><hr /><h4>{{ settings.temperature }}º</h4></a>
 	        		{% endif %}
-					{% if settings.mode == 1 or settings.mode == 9 %}
+					{% if settings.mode == 1 or settings.mode == 8 or settings.mode == 9 %}
 	        		<h3 align="center">Temperature</h3>
 	        		<div data-role="button" data-theme="a"><h1>{{ readings.temperature }}º</h1><hr /><h4>-</h4></div>
 	        		{% endif %}
@@ -23,7 +23,7 @@
 					<h3 align="center">Humidity</h3>
 					<a href="{% url 'settings:humidity' device.identifier %}" data-role="button"><h1>{{ readings.humidity }}%</h1><hr /><h4>{{ settings.humidity }}%</h4></a>
 					{% endif %}
-					{% if settings.mode == 5 or settings.mode == 9 %}
+					{% if settings.mode == 5 or settings.mode == 8 or settings.mode == 9 %}
 					<h3 align="center">Humidity</h3>
 					<div data-role="button" data-theme="a"><h1>{{ readings.humidity }}%</h1><hr /><h4>-</h4></div>
 					{% endif %}

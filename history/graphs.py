@@ -6,8 +6,11 @@ try:
 	import rrdtool
 except:
 	print("python-rrdtool library is not installed. Graphs will not be available.")
-else:
-	rrd_file = "temp_humidity-2.rrd"
+
+def create_graphs(device_id):
+	rrd_file = "temp_humidity-%s.rrd" % device_id
+
+	graph_type = {}
 	graph_type["temperature"] = {'data_sources': ['DEF:temperatureAvg=%s:temperature:AVERAGE' % rrd_file,
 												  'DEF:temperatureSet=%s:temperatureSetPoint:AVERAGE' % rrd_file,
 												  #'DEF:temperatureMax=%s:temperature:MAX' % rrd_file,
@@ -29,11 +32,11 @@ else:
 											   #'LINE1:humidityMin#FF0000:Humidity Min\r'
 											   ]}
 
-def create_graphs():
 	image_names = [] #keep track of all image paths so we can return it to caller
+
 	for graph in graph_type:
 		for time_period in time_periods:
-			image_name = "graph-%s-%s.png" % (graph, time_period)
+			image_name = "graph-%s-%s-%s.png" % (device_id, graph, time_period)
 			image_names.append(image_name)
 			rrdtool.graph("./history/static/%s" % image_name,
 				"--start", "-%s" % time_period,
