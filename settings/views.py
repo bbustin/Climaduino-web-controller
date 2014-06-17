@@ -5,7 +5,7 @@ from django.forms import ModelForm
 # from django.forms.formsets import formset_factory
 from django.utils import timezone
 from django.core.urlresolvers import reverse
-from django.views.decorators.http import require_http_methods
+# from django.views.decorators.http import require_http_methods
 from django.views.decorators.csrf import csrf_exempt
 from settings.models import Device, Setting, Reading, Program
 

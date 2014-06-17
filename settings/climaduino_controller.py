@@ -17,7 +17,7 @@ import json, time
 ## Django stuff
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'climaduino.settings'
-from models import Setting, Reading
+from settings.models import Setting, Reading
 from django.utils import timezone
 ##
 

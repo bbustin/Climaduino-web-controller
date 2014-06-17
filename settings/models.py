@@ -1,8 +1,6 @@
 from django.db import models
-try:
-	import rrdtool_log_2 as rrdtool_log
-except ImportError:
-	pass
+import rrdtool_log
+import climaduino_programming_sentry
 
 class Device(models.Model):
 	identifier = models.IntegerField(primary_key=True)
@@ -63,3 +61,6 @@ queue = multiprocessing.Queue()
 logger_process = multiprocessing.Process(target=rrdtool_log.main, name="rrdtool logger", args=[queue, 4])
 logger_process.daemon = True
 logger_process.start()
+programming_sentry_process = multiprocessing.Process(target=climaduino_programming_sentry.main, name="programming sentry", args=[60])
+programming_sentry_process.daemon = True
+programming_sentry_process.start()
