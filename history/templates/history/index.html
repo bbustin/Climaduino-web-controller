@@ -2,7 +2,8 @@
 {% block title %}Climaduino History{% endblock %}
 {% block header %}
 				<a href="javascript:location.reload(true);" data-icon="refresh">Refresh</a>
-				<h1>Climaduino</h1>
+				<h1>{{device.zonename}} history</h1>
+				<a href="{% url 'settings:index' %}" data-icon="grid">Zones</a>
 {% endblock %}
 {% block content %}
 				<div data-role="collapsible-set">

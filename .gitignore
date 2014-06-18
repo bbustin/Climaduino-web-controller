@@ -1,0 +1,8 @@
+*.pyc
+.DS_Store
+*.log
+*.logc
+*.sublime-project
+*.sublime-projectc
+*.sublime-workspace
+*.sqlite3
