@@ -96,9 +96,9 @@ def programs(request, device_id):
 	if request.method == 'POST':
 		form = ProgrammingForm(request.POST)
 		if form.is_valid():
-			program_record = Program(**form.cleaned_data)
+			program_record = Program(device_id=device.identifier, **form.cleaned_data)
 			program_record.save()
-		return HttpResponseRedirect(reverse('settings:programs'))
+		return HttpResponseRedirect(reverse('settings:programs', args=[device.identifier]))
 	elif request.method == 'GET':
 		form = ProgrammingForm()
 		return render(request, 'settings/programs.html',

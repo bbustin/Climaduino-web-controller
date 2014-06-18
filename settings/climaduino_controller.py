@@ -81,9 +81,12 @@ def main(queue, climaduino_poll_interval_in_seconds):
 				data_item.update(item)
 		if len(data_item)>0:
 			device = models.Device.objects.get(pk=data_item['device_id'])
-			climaduino_set_parameters(device.name, {'tempSetPoint': data_item['parameters']['temp'],
-													'humiditySetPoint': data_item['parameters']['humidity'],
-													'mode': data_item['parameters']['mode'],})
+			try:
+				climaduino_set_parameters(device.name, {'tempSetPoint': data_item['parameters']['temp'],
+														'humiditySetPoint': data_item['parameters']['humidity'],
+														'mode': data_item['parameters']['mode'],})
+			except KeyError as details:
+				print("{} - Unable to update Climaduino: {}".format(device.name, details))
 		if (time.time() - last_poll >= climaduino_poll_interval_in_seconds):
 			last_poll = time.time()
 			for device in models.Device.objects.all():
@@ -91,19 +94,16 @@ def main(queue, climaduino_poll_interval_in_seconds):
 				if values:
 					print(values)
 					try:
+						database_update(device.identifier, float(values['temperature']), float(values['humidity']), int(values['tempSetPoint']), int(values['humiditySetPoint']), int(values['mode']), int(values['currentlyRunning']), int(values['stateChangeAllowed']))
+					except KeyError as details:
+						print("{} - Unable to update database: {}".format(device.name, details))
+					# clear queue, otherwise will try to send the setpoints and mode to the Arduino even though that is just where we got the information
+					items_available = True
+					while items_available:
 						try:
-							database_update(device.identifier, float(values['temperature']), float(values['humidity']), int(values['tempSetPoint']), int(values['humiditySetPoint']), int(values['mode']), int(values['currentlyRunning']), int(values['stateChangeAllowed']))
-						except IndexError as details:
-							print("{} - Unable to update database: {}".format(device.name, details))
-						# clear queue, otherwise will try to send the setpoints and mode to the Arduino even though that is just where we got the information
-						items_available = True
-						while items_available:
-							try:
-								queue.get(False) #non-blocking read
-							except Queue.Empty:
-								items_available = False
-					except IndexError as details:
-						print(details)
+							queue.get(False) #non-blocking read
+						except Queue.Empty:
+							items_available = False
 		time.sleep(.5)
 
 	# print("setting parameters")
