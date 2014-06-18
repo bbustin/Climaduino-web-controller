@@ -1,8 +1,8 @@
 {% extends "base_template.html" %}
-{% block title %}Climaduino - {{device.name}}{% endblock %}
+{% block title %}Climaduino - {{device.zonename}}{% endblock %}
 {% block header %}
 <a href="javascript:location.reload(true);" data-icon="refresh">Refresh</a>
-<h1>{{device.name}}</h1>
+<h1>{{device.zonename}}</h1>
 <a href="{% url 'settings:index' %}" data-icon="grid">Zones</a>
 {% endblock %}
 {% block content %}
@@ -29,7 +29,7 @@
 					{% endif %}
 				</div>
 			</div>
-		     
+		    {% if settings.currentlyRunning %}System Running{% endif %}
 			<form action="{% url 'settings:device_index' device.identifier %}" method="post">
 				{% csrf_token %}
 				{{ form.as_p }}

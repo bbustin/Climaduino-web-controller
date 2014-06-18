@@ -6,7 +6,7 @@
 {% block content %}
 			<ul>
 			{% for device in devices %}
-				<li><a href="{% url 'settings:device_index'  device.identifier%}" data-role="button">{{device.name}}</a></li>
+				<li><a href="{% url 'settings:device_index'  device.identifier%}" data-role="button">{{device.zonename}}</a></li>
 			{% endfor %}
 			</ul>
 {% endblock %}

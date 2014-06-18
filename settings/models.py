@@ -1,12 +1,14 @@
 from django.db import models
 import rrdtool_log
 import climaduino_programming_sentry
+import climaduino_controller
 
 class Device(models.Model):
 	identifier = models.IntegerField(primary_key=True)
-	name = models.CharField("device name", max_length=30)
+	name = models.CharField("device name - hostname of Arduino Yun", max_length=30)
+	zonename = models.CharField("zone name", max_length=30)
 	def __unicode__(self):
-		return("%s (%d)" % (self.name, self.identifier))
+		return("%s (%d)" % (self.zonename, self.identifier))
 
 class Setting(models.Model):
 	device = models.ForeignKey("Device")
@@ -17,10 +19,13 @@ class Setting(models.Model):
 	mode = models.IntegerField(choices=mode_choices, default=0)
 	temperature = models.IntegerField(default=77)
 	humidity = models.IntegerField(default=55)
+	currentlyRunning = models.BooleanField(default=False)
+	stateChangeAllowed = models.BooleanField(default=False)
 	def __unicode__(self):
 		return("%s - \n\tmode: %d\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.mode, self.temperature, self.humidity))
 	def log(self):
-		queue.put({'device_id': self.device.identifier, 'parameters': {'temp': self.temperature, 'humidity': self.humidity}})		
+		queue.put({'device_id': self.device.identifier, 'parameters': {'temp': self.temperature, 'humidity': self.humidity}})
+		queue_update_parameters.put({'device_id': self.device.identifier, 'parameters': {'temp': self.temperature, 'humidity': self.humidity, 'mode': self.mode}})		
 	# overriding save so we can also log to rrdtool in addition to updating the DB
 	def save(self, *args, **kwargs):
 		self.log()
@@ -61,6 +66,11 @@ queue = multiprocessing.Queue()
 logger_process = multiprocessing.Process(target=rrdtool_log.main, name="rrdtool logger", args=[queue, 4])
 logger_process.daemon = True
 logger_process.start()
+
+queue_update_parameters = multiprocessing.Queue()
+controller_process = multiprocessing.Process(target=climaduino_controller.main, name="climaduino controller", args=[queue_update_parameters, 15])
+controller_process.daemon = True
+controller_process.start()
 programming_sentry_process = multiprocessing.Process(target=climaduino_programming_sentry.main, name="programming sentry", args=[60])
 programming_sentry_process.daemon = True
 programming_sentry_process.start()

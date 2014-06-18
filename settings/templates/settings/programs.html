@@ -1,7 +1,7 @@
 {% extends "base_template.html" %}
 {% block title %}Climaduino Programs{% endblock %}
 {% block header %}
-				<h1>{{device.name}}</h1>
+				<h1>{{device.zonename}}</h1>
 				<a href="{% url 'settings:index' %}" data-icon="grid" class='ui-btn-right'>Zones</a>
 {% endblock %}
 {% block content %}
