@@ -1,14 +1,11 @@
-# call from climaduino top-level directory using
-# python -m settings.climaduino-controller
-
 # Used the following for ideas on using coroutines:
 # http://www.dabeaz.com/coroutines/index.html
 # http://lgiordani.github.io/blog/2013/03/25/python-generators-from-iterators-to-cooperative-multitasking/
+import time, os
 try:
 	import rrdtool
 except ImportError:
-	raise Exception("python-rrdtool library is not installed")
-import json, time, os
+	print("python-rrdtool library is not installed\nNo logging will be available")
 
 def create_database(file_name, interval_in_seconds="60"): 
 	error = rrdtool.create(
@@ -89,6 +86,11 @@ def broadcast(targets):
 			target.send(data)
 
 def main(queue, interval_in_seconds):
+	# do not run if rrdtool has not been imported
+	try:
+		rrdtool
+	except NameError:
+		return
 	import Queue
 	# set process niceness value to lower its priority
 	os.nice(1)
@@ -116,6 +118,6 @@ def main(queue, interval_in_seconds):
 			data_logger.send(data_item)
 		time.sleep(interval_in_seconds)
 
-# if called directly from the command line, then execute the main() function
-if __name__ == "__main__":
-	main()
+# # if called directly from the command line, then execute the main() function
+# if __name__ == "__main__":
+# 	main()

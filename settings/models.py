@@ -5,7 +5,7 @@ import climaduino_controller
 
 class Device(models.Model):
 	identifier = models.IntegerField(primary_key=True)
-	name = models.CharField("device name - hostname of Arduino Yun", max_length=30)
+	name = models.CharField("Yun hostname", max_length=30)
 	zonename = models.CharField("zone name", max_length=30)
 	def __unicode__(self):
 		return("%s (%d)" % (self.zonename, self.identifier))
@@ -15,8 +15,9 @@ class Setting(models.Model):
 	time = models.DateTimeField('last change')
 	source_choices = ((0, 'Climaduino'),(1, 'Controller'), (3, 'Program'))
 	source = models.IntegerField('source of last change', choices=source_choices, default=0)
-	mode_choices = ((0, 'Cooling/Humidity Control'), (1, 'Humidity Control'), (5, 'Heating'), (8, 'Fan Only'), (9, 'Off'))
+	mode_choices = ((0, 'Cooling'), (1, 'Humidity Control'), (5, 'Heating'), (9, 'Off'))
 	mode = models.IntegerField(choices=mode_choices, default=0)
+	fanMode = models.BooleanField(default=False)
 	temperature = models.IntegerField(default=77)
 	humidity = models.IntegerField(default=55)
 	currentlyRunning = models.BooleanField(default=False)
@@ -25,7 +26,7 @@ class Setting(models.Model):
 		return("%s - \n\tmode: %d\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.mode, self.temperature, self.humidity))
 	def log(self):
 		queue.put({'device_id': self.device.identifier, 'parameters': {'temp': self.temperature, 'humidity': self.humidity}})
-		queue_update_parameters.put({'device_id': self.device.identifier, 'parameters': {'temp': self.temperature, 'humidity': self.humidity, 'mode': self.mode}})		
+		queue_update_parameters.put({'device_id': self.device.identifier, 'parameters': {'temp': self.temperature, 'humidity': self.humidity, 'mode': self.mode, 'fanMode': self.fanMode,}})		
 	# overriding save so we can also log to rrdtool in addition to updating the DB
 	def save(self, *args, **kwargs):
 		self.log()

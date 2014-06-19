@@ -14,9 +14,14 @@ The code will directly read the database using Django libraries.
 import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'climaduino.settings'
 import models
-
-import time, datetime
+import django
+# to maintain backwards compatibility with Django 1.6
+try:
+	django.setup()
+except AttributeError:
+	pass
 ##
+import time, datetime
 
 def main(interval_in_seconds=300):
    # BUG: Does not work when interval wraps around between days. If interval is 5 minutes
@@ -29,29 +34,30 @@ def main(interval_in_seconds=300):
 		print("Programming: Checking")
 	   	now = datetime.datetime.now()
 	   	current_settings = models.Setting.objects.last()
-	   	# find out the day 0 is Monday
-	   	current_day = now.weekday()
+	   	if current_settings: #make sure we actually have current settings available
+		   	# find out the day 0 is Monday
+		   	current_day = now.weekday()
 
-	   	# find out the time
-	   	current_time = now.time()
+		   	# find out the time
+		   	current_time = now.time()
 
-	   	# calculate the time minus interval_in_seconds
-	   	earliest_time = now - datetime.timedelta(seconds=interval_in_seconds)
-	   	earliest_time = earliest_time.time()
+		   	# calculate the time minus interval_in_seconds
+		   	earliest_time = now - datetime.timedelta(seconds=interval_in_seconds)
+		   	earliest_time = earliest_time.time()
 
-	   	# query DB with interval_in_seconds "fudge factor"
-	   	program_query = models.Program.objects.filter(mode=current_settings.mode, day=current_day, time__range=(earliest_time, current_time))
-	   	print(program_query)
-	   	# if program exists, find out what should be changed and then change it
-	   	for program in program_query:
-	   		print("Programming: Setting record")
-	   		setting = models.Setting.objects.filter(device__pk=program.device_id).last()
-	   		setting.time = now
-	   		setting.source = 3
-	   		setting.mode = program.mode
-	   		setting.temperature = program.temperature
-	   		setting.humidity = program.humidity
-	   		setting.save()
+		   	# query DB with interval_in_seconds "fudge factor"
+		   	program_query = models.Program.objects.filter(mode=current_settings.mode, day=current_day, time__range=(earliest_time, current_time))
+		   	print(program_query)
+		   	# if program exists, find out what should be changed and then change it
+		   	for program in program_query:
+		   		print("Programming: Setting record")
+		   		setting = models.Setting.objects.filter(device__pk=program.device_id).last()
+		   		setting.time = now
+		   		setting.source = 3
+		   		setting.mode = program.mode
+		   		setting.temperature = program.temperature
+		   		setting.humidity = program.humidity
+		   		setting.save()
 
 	   	# sleep for interval_in_seconds so we only check once during that interval
 	   	time.sleep(interval_in_seconds)

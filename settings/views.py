@@ -12,7 +12,7 @@ from settings.models import Device, Setting, Reading, Program
 class SettingForm(ModelForm):
 	class Meta:
 		model = Setting
-		fields=['mode']
+		fields=['mode', 'fanMode']
 
 class TemperatureForm(ModelForm):
 	class Meta:
@@ -35,9 +35,13 @@ def device_index(request, device_id):
 	if request.method == 'POST':
 		form = SettingForm(request.POST)
 		if form.is_valid():
-			if 'mode' in form.cleaned_data:
+			update_time = timezone.now()
+			if setting:
 				setting.mode = form.cleaned_data['mode']
-				setting.save()
+				setting.fanMode = form.cleaned_data['fanMode']
+			else:
+				setting = Setting(device_id=device_id, time=update_time, mode=form.cleaned_data['mode'], fanMode=form.cleaned_data['fanMode'])
+			setting.save()
 		return HttpResponseRedirect(reverse('settings:device_index', args=[device.identifier]))
 	elif request.method == 'GET':
 		current_readings = Reading.objects.filter(device__pk=device_id).last()

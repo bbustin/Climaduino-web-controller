@@ -6,3 +6,4 @@
 *.sublime-projectc
 *.sublime-workspace
 *.sqlite3
+*.rrd

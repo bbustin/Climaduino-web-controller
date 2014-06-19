@@ -1,9 +1,3 @@
-# call from climaduino top-level directory using
-# python -m settings.climaduino_controller
-
-# Used the following for ideas on using coroutines:
-# http://www.dabeaz.com/coroutines/index.html
-# http://lgiordani.github.io/blog/2013/03/25/python-generators-from-iterators-to-cooperative-multitasking/
 import requests, time
 
 ## Django stuff
@@ -11,8 +5,14 @@ import os
 os.environ['DJANGO_SETTINGS_MODULE'] = 'climaduino.settings'
 import models
 from django.utils import timezone
+import django
+# to maintain backwards compatibility with Django 1.6
+try:
+	django.setup()
+except AttributeError:
+	pass
 ##
-def database_update(device_id, temperature, humidity, tempSetPoint, humiditySetPoint, mode, currentlyRunning, stateChangeAllowed):
+def database_update(device_id, temperature, humidity, tempSetPoint, humiditySetPoint, mode, fanMode, currentlyRunning, stateChangeAllowed):
 	update_time = timezone.now()
 
 	# update reading
@@ -28,11 +28,12 @@ def database_update(device_id, temperature, humidity, tempSetPoint, humiditySetP
 	# update setting
 	setting = models.Setting.objects.filter(device__pk=device_id).last()
 	if not setting:
-		setting = models.Setting(device_id=device_id, time=update_time, source=0, mode=mode, temperature=tempSetPoint, humidity=humiditySetPoint, currentlyRunning=currentlyRunning, stateChangeAllowed=stateChangeAllowed)
+		setting = models.Setting(device_id=device_id, time=update_time, source=0, mode=mode, fanMode=fanMode, temperature=tempSetPoint, humidity=humiditySetPoint, currentlyRunning=currentlyRunning, stateChangeAllowed=stateChangeAllowed)
 	else:
 		setting.time = update_time
 		setting.source = 0
 		setting.mode = mode
+		setting.fanMode = fanMode
 		setting.temperature = tempSetPoint
 		setting.humidity = humiditySetPoint
 		setting.currentlyRunning = currentlyRunning
@@ -84,7 +85,8 @@ def main(queue, climaduino_poll_interval_in_seconds):
 			try:
 				climaduino_set_parameters(device.name, {'tempSetPoint': data_item['parameters']['temp'],
 														'humiditySetPoint': data_item['parameters']['humidity'],
-														'mode': data_item['parameters']['mode'],})
+														'mode': data_item['parameters']['mode'],
+														'fanMode': int(data_item['parameters']['fanMode'])})
 			except KeyError as details:
 				print("{} - Unable to update Climaduino: {}".format(device.name, details))
 		if (time.time() - last_poll >= climaduino_poll_interval_in_seconds):
@@ -94,7 +96,7 @@ def main(queue, climaduino_poll_interval_in_seconds):
 				if values:
 					print(values)
 					try:
-						database_update(device.identifier, float(values['temperature']), float(values['humidity']), int(values['tempSetPoint']), int(values['humiditySetPoint']), int(values['mode']), int(values['currentlyRunning']), int(values['stateChangeAllowed']))
+						database_update(device.identifier, float(values['temperature']), float(values['humidity']), int(values['tempSetPoint']), int(values['humiditySetPoint']), int(values['mode']), int(values['fanMode']), int(values['currentlyRunning']), int(values['stateChangeAllowed']))
 					except KeyError as details:
 						print("{} - Unable to update database: {}".format(device.name, details))
 					# clear queue, otherwise will try to send the setpoints and mode to the Arduino even though that is just where we got the information
