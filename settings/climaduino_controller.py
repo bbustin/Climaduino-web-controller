@@ -43,7 +43,7 @@ def database_update(device_id, temperature, humidity, tempSetPoint, humiditySetP
 def climaduino_poll(device_name):
 	url = "http://{}.local/data/get".format(device_name)
 	try:
-		request = requests.get(url)
+		request = requests.get(url, timeout=5)
 		request.raise_for_status()
 	except (requests.exceptions.HTTPError, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as details:
 		print("{} - Failed to poll: {}".format(device_name, details))
@@ -55,7 +55,7 @@ def climaduino_set_parameters(device_name, parameters):
 	for parameter in parameters:
 		url = "{}/{}/{}".format(url_base, parameter, parameters[parameter])
 		try:
-			request = requests.get(url)
+			request = requests.get(url, timeout=5)
 			request.raise_for_status()
 		except (requests.exceptions.HTTPError, requests.exceptions.Timeout, requests.exceptions.ConnectionError) as details:
 			print("{} - Failed to set '{}' parameter: {}".format(device_name, parameter, details))

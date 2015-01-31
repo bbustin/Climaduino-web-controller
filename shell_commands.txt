@@ -1,0 +1,7 @@
+# open shell with 'python manage.py shell'
+
+# Change all programs from Monday-Friday that occur at 8AM and set the temperature to 76 so time is 6:30AM
+from settings.models import Program
+for program in Program.objects.filter(temperature=76, day__range=(0,5), time="8:00:00"):
+	program.time = "6:30:00"
+	program.save()
