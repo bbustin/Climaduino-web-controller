@@ -1,5 +1,5 @@
 from django.db import models
-import json, socket
+import json, socket, multiprocessing
 
 def send_settings(data):
 	# Connect to the server
@@ -27,8 +27,10 @@ class Setting(models.Model):
 	def __unicode__(self):
 		return("%s - \n\tmode: %d\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.mode, self.temperature, self.humidity))
 	def save(self, *args, **kwargs):
-		# send the settings to the mqtt_bridge so the Climaduino will receive them
-		send_settings({self.device.name: {'settings': {'mode': self.mode, 'fanMode': self.fanMode, 'tempSetPoint': self.temperature, 'humiditySetPoint': self.humidity}}})
+		# send the settings to the mqtt_bridge so the Climaduino will receive them and to the rrd_tool logger
+		settings = {self.device.name: {'settings': {'mode': self.mode, 'fanMode': self.fanMode, 'tempSetPoint': self.temperature, 'humiditySetPoint': self.humidity}}}
+		send_settings(settings)
+		queue.put(settings)
 		super(Setting, self).save(*args, **kwargs) # save the DB record
 
 class Status(models.Model):
@@ -46,6 +48,9 @@ class Reading(models.Model):
 	humidity = models.DecimalField(max_digits=5, decimal_places=2)
 	def __unicode__(self):
 		return("%s - Readings:\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.temperature, self.humidity))
+	# def save(self, *args, **kwargs):
+	# 	readings = {self.device.name: {'readings': {'temperature': self.temperature, 'humidity': self.humidity}}}
+	# 	super(Setting, self).save(*args, **kwargs) # save the DB record
 
 class Program(models.Model):
 	device = models.ForeignKey("Device")
@@ -61,3 +66,5 @@ class Program(models.Model):
 	# prevent creating more than 1 program for any specific day of week/time combination for any device
 	class Meta:
 		unique_together = ('device', 'mode', 'day', 'time',)
+
+

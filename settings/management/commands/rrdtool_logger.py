@@ -52,15 +52,16 @@ def coroutine(func):
 def log_data():
 	while 1:
 		data = (yield)
-		rrd_file = "temp_humidity-%s.rrd" % data["device_id"]
-		try:
-			rrdtool.update(rrd_file, "N:%f:%f:%f:%f" % (data["readings"]["temp"], data["parameters"]["temp"], data["readings"]["humidity"], data["parameters"]["humidity"]))
-		except rrdtool.error as details:
-			print(details)
-			print("Database probably does not exist. Attempting to create it.")
-			create_database(file_name=rrd_file)
-		except KeyError as details:
-			print("%s data was missing. Skipped." % details)
+		for device in data:
+			rrd_file = "temp_humidity-%s.rrd" % device
+			try:
+				rrdtool.update(rrd_file, "N:%f:%f:%f:%f" % (data[device]["readings"]["temperature"], data[device]["settings"]["tempSetPoint"], data[device]["readings"]["humidity"], data[device]["settings"]["humiditySetPoint"]))
+			except rrdtool.error as details:
+				print(details)
+				print("Database probably does not exist. Attempting to create it.")
+				create_database(file_name=rrd_file)
+			except KeyError as details:
+				print("%s data was missing. Skipped." % details)
 
 @coroutine
 def display_data():

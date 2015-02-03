@@ -10,102 +10,60 @@ import json
 
 import SocketServer, threading, socket
 
-# The callback for when the client receives a CONNACK response from the server.
-def on_connect(client, userdata, flags, rc):
-	# Subscribing in on_connect() means that if we lose the connection and
-	# reconnect then subscriptions will be renewed.
-	client.subscribe("climaduino/+/readings/#")
-	client.subscribe("climaduino/+/status/#")
-	self.stdout.write("Connected to MQTT broker")
-
-# The callback for when a PUBLISH message is received from the server.
-def on_message(client, userdata, msg):
-	(device, category, item) = msg.topic.replace("climaduino/", "").split("/", 2)
-	data = {device: {category: {item: msg.payload}}}
-	database_update(data)
-	print(str(data))
-
-def on_disconnect(client, userdata, rc):
-    if rc != 0:
-        print("Connection to MQTT broker unexpectedly lost")
-        connected = False
-        while not connected:
-	        try:
-	        	client.reconnect()
-	        except (socket.gaierror, socket.error):
-	        	print("Reconnection failed. Will try again shortly.")
-	        	time.sleep(30)
-	        else:
-	        	connected = True
-	        	print("Reconnected")
-	else:
-		print("Disconnected from MQTT broker")
-
 client = mqtt.Client()
-client.on_connect = on_connect
-client.on_message = on_message
-client.on_disconnect = on_disconnect
 
 class Command(BaseCommand):
 	args = 'There are no args!'
 	help = 'Starts up communication with Climaduinos via the MQTT broker'
 
 	def handle(self, *args, **options):
-		self.stdout.write("Climaduino Controller started")
-		socket_address = ('/tmp/climaduino_mqtt_bridge')
-
-		# clean up stale socket if there is one
-		try:
-			os.remove(socket_address)
-		except OSError:
-			pass
-
-		connected = False
-		tries = 0
-		while not connected and tries <= 20:
-			tries += 1
-			try:
-				server = SocketServer.UnixStreamServer(socket_address, ReceiveSettingsHandler)
-				t = threading.Thread(target=server.serve_forever)
-				t.setDaemon(True) # don't hang on exit
-				t.start()
-			except socket.error as error:
-				self.stdout.write("Error starting server. Will retry shortly.\n\t{}".format(error))
-				time.sleep(5)
-			else:
-				connected = True
-
-		if not connected:
-			raise Exception("Unable to listen for setting changes")
-
-		self.stdout.write("Listening for setting changes on socket {}".format(socket_address))
-
-		client.connect("test.mosquitto.org", 1883, 60)
+		self.stdout.write("Climaduino MQTT bridge started")
+		open_socket('/tmp/climaduino_mqtt_bridge', ReceiveSettingsHandler)
+		mqtt_connect("test.mosquitto.org")
 		# print results from all Climaduinos and update DB
 		last_poll = time.time()
 		while 1:
-			# if (time.time() - last_poll >= poll_interval_seconds):
-			# 	last_poll = time.time()
-			# 	# get data to set
-			# 	items_available = True
-			# 	data_item={}
-			# 	while items_available:
-			# 		try:
-			# 			item = queue.get(False) #non-blocking read
-			# 		except Queue.Empty:
-			# 			items_available = False
-			# 		else:
-			# 			data_item.update(item)
-			# 	if len(data_item)>0:
-			# 		database_update(data_item)
-			# 		# for device in data_item:
-			# 		# 	# pseudo-code for now...
-			# 		# 	print(device)
-			# 		# 	print("\t-{}".format(data_item))
 			client.loop(timeout=1)
-
 			time.sleep(.5)
 
+def open_socket(socket_address, handler):
+	# clean up stale socket if there is one
+	try:
+		os.remove(socket_address)
+	except OSError:
+		pass
+
+	connected = False
+	tries = 0
+	while not connected and tries <= 20:
+		tries += 1
+		try:
+			server = SocketServer.UnixStreamServer(socket_address, handler)
+			t = threading.Thread(target=server.serve_forever)
+			t.setDaemon(True) # don't hang on exit
+			t.start()
+		except socket.error as error:
+			self.stdout.write("Error starting server. Will retry shortly.\n\t{}".format(error))
+			time.sleep(5)
+		else:
+			connected = True
+
+	if not connected:
+		raise Exception("Unable to listen for setting and reading changes")
+
+	print("Listening for setting and reading changes on socket {}".format(socket_address))
+
+def mqtt_connect(host, port=1883, keep_alive=60):
+	client.on_connect = on_connect
+	client.on_message = on_message
+	client.on_disconnect = on_disconnect
+	client.connect(host, port, keep_alive)
+
+	# Blocking call that processes network traffic, dispatches callbacks and
+	# handles reconnecting.
+	# Other loop*() functions are available that give a threaded interface and a
+	# manual interface.
+	client.loop_forever()
 
 def database_update(data):
 	update_time = timezone.now()
@@ -162,6 +120,39 @@ def database_update(data):
 				setattr(status, attribute, data_status[attribute])
 			status.save()
 
+## MQTT handlers
+# The callback for when the client receives a CONNACK response from the server.
+def on_connect(client, userdata, flags, rc):
+	# Subscribing in on_connect() means that if we lose the connection and
+	# reconnect then subscriptions will be renewed.
+	client.subscribe("climaduino/+/readings/#")
+	client.subscribe("climaduino/+/status/#")
+	print("Connected to MQTT broker")
+
+# The callback for when a PUBLISH message is received from the server.
+def on_message(client, userdata, msg):
+	(device, category, item) = msg.topic.replace("climaduino/", "").split("/", 2)
+	data = {device: {category: {item: msg.payload}}}
+	database_update(data)
+	print(str(data))
+
+def on_disconnect(client, userdata, rc):
+    if rc != 0:
+        print("Connection to MQTT broker unexpectedly lost")
+        connected = False
+        while not connected:
+	        try:
+	        	client.reconnect()
+	        except (socket.gaierror, socket.error):
+	        	print("Reconnection failed. Will try again shortly.")
+	        	time.sleep(30)
+	        else:
+	        	connected = True
+	        	print("Reconnected")
+	else:
+		print("Disconnected from MQTT broker")
+
+## SocketServer handler
 class ReceiveSettingsHandler(SocketServer.BaseRequestHandler):
 	def handle(self):
 		# Echo the back to the client
