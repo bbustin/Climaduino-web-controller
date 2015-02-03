@@ -1,11 +1,32 @@
+# TODO: Detect when connection to broker lost and reconnect!
 from django.core.management.base import BaseCommand, CommandError
-from settings.models import Device, Setting, Reading
+from settings.models import Device, Status, Setting, Reading
 from django.utils import timezone
 
 import paho.mqtt.client as mqtt
 import os, time
 
+import json
+
 import SocketServer, threading, socket
+
+client = mqtt.Client()
+# The callback for when the client receives a CONNACK response from the server.
+def on_connect(client, userdata, flags, rc):
+	# Subscribing in on_connect() means that if we lose the connection and
+	# reconnect then subscriptions will be renewed.
+	client.subscribe("climaduino/+/readings/#")
+	client.subscribe("climaduino/+/status/#")
+
+# The callback for when a PUBLISH message is received from the server.
+def on_message(client, userdata, msg):
+	(device, category, item) = msg.topic.replace("climaduino/", "").split("/", 2)
+	data = {device: {category: {item: msg.payload}}}
+	database_update(data)
+	print(str(data))
+
+client.on_connect = on_connect
+client.on_message = on_message
 
 class Command(BaseCommand):
 	args = 'There are no args!'
@@ -32,24 +53,8 @@ class Command(BaseCommand):
 				connected = True
 		self.stdout.write("Listening for setting changes at {}:{}".format(ip, port))
 
-		# The callback for when the client receives a CONNACK response from the server.
-		def on_connect(client, userdata, flags, rc):
-			# Subscribing in on_connect() means that if we lose the connection and
-			# reconnect then subscriptions will be renewed.
-			client.subscribe("climaduino/+/readings/#")
-			client.subscribe("climaduino/+/status/#")
-
-		# The callback for when a PUBLISH message is received from the server.
-		def on_message(client, userdata, msg):
-			(device, category, item) = msg.topic.replace("climaduino/", "").split("/", 2)
-			data = {device: {category: {item: msg.payload}}}
-			database_update(data)
-			self.stdout.write(str(data))
-
-		client = mqtt.Client()
-		client.on_connect = on_connect
-		client.on_message = on_message
 		client.connect("test.mosquitto.org", 1883, 60)
+		self.stdout.write("Connected to MQTT broker")
 		# print results from all Climaduinos and update DB
 		last_poll = time.time()
 		while 1:
@@ -101,27 +106,52 @@ def database_update(data):
 			reading.save()
 			
 		try:
-			data_status = data[device]['status']
+			data_settings = data[device]['settings']
 		except KeyError:
 			pass # no status to update
 		else:
 			# update status information
 			setting = Setting.objects.filter(device__pk=device).last()
 			if not setting:
-				setting = Setting(device=device_object, time=update_time, mode=0, fanMode=0, temperature=0, humidity=0, currentlyRunning=0, stateChangeAllowed=0)
+				setting = Setting(device=device_object, time=update_time, mode=0, fanMode=0, temperature=0, humidity=0)
 			setting.time = update_time
 			setting.source = 0
-			for attribute in data_status:
-				setattr(setting, attribute, data_status[attribute])
+			for attribute in data_settings:
+				setattr(setting, attribute, data_settings[attribute])
 			setting.save()
 
+
+		try:
+			data_status = data[device]['status']
+		except KeyError:
+			pass # no status to update
+		else:
+			# update status information
+			status = Status.objects.filter(device__pk=device).last()
+			if not status:
+				status = Status(device=device_object, time=update_time, currentlyRunning=0, stateChangeAllowed=0)
+			status.time = update_time
+			status.source = 0
+			for attribute in data_status:
+				setattr(status, attribute, data_status[attribute])
+			status.save()
+
 class ReceiveSettingsHandler(SocketServer.BaseRequestHandler):
-    def handle(self):
-        # Echo the back to the client
-        data = self.request.recv(1024)
-        print("GOT DATA!!!!!!!")
-        print(data)
-        return
+	def handle(self):
+		# Echo the back to the client
+		data = json.loads(self.request.recv(1024))
+		for device in data:
+			try:
+				for (key, value) in data[device]['settings'].items():
+					# Convert boolean values to 0 and 1
+					if isinstance(value, bool):
+						value = int(value)
+					client.publish('climaduino/{}/settings/{}'.format(device, key), value)
+					time.sleep(0.1) # does not seem to work reliably without a slight pause
+			except KeyError:
+				print("Invalid data received: {}".format(data))
+		print(data)
+		return
 
 # if called directly from the command line, then execute the main() function
 if __name__ == "__main__":

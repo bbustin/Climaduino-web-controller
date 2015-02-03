@@ -1,8 +1,6 @@
 from django.db import models
 import json, socket
-import rrdtool_log
-# import climaduino_programming_sentry
-# import climaduino_mqtt_controller
+
 def send_settings(data):
 	ip = '127.0.0.1'
 	port = 64000
@@ -28,17 +26,23 @@ class Setting(models.Model):
 	fanMode = models.BooleanField(default=False)
 	temperature = models.IntegerField(default=77)
 	humidity = models.IntegerField(default=55)
-	currentlyRunning = models.BooleanField(default=False)
-	stateChangeAllowed = models.BooleanField(default=False)
 	def __unicode__(self):
 		return("%s - \n\tmode: %d\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.mode, self.temperature, self.humidity))
 	def log(self):
-		send_settings({self.device.name: {'settings': {'temp': self.temperature, 'humidity': self.humidity}}})
+		send_settings({self.device.name: {'settings': {'mode': self.mode, 'fanMode': self.fanMode, 'tempSetPoint': self.temperature, 'humiditySetPoint': self.humidity}}})
 	# 	queue_update_parameters.put({self.device.name: {'settings': {'temp': self.temperature, 'humidity': self.humidity, 'mode': self.mode, 'fanMode': self.fanMode,}}})		
 	# overriding save so we can also log to rrdtool in addition to updating the DB
 	def save(self, *args, **kwargs):
 		self.log()
 		super(Setting, self).save(*args, **kwargs) # save the DB record
+
+class Status(models.Model):
+	device = models.ForeignKey("Device")
+	time = models.DateTimeField('last change')
+	currentlyRunning = models.BooleanField(default=False)
+	stateChangeAllowed = models.BooleanField(default=False)
+	def __unicode__(self):
+		return("- \n\tcurrentlyRunning: %s\n\tstateChangeAllowed: %s" % (self.currentlyRunning, self.stateChangeAllowed))
 
 class Reading(models.Model):
 	device = models.ForeignKey("Device")
