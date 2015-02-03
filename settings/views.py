@@ -29,9 +29,9 @@ class ProgrammingForm(ModelForm):
 		model = Program
 		fields = ['mode', 'day', 'time', 'temperature', 'humidity']
 
-def device_index(request, device_id):
-	device = Device.objects.get(pk=device_id)
-	setting = Setting.objects.filter(device__pk=device_id).last()
+def device_index(request, device_name):
+	device = Device.objects.get(pk=device_name)
+	setting = Setting.objects.filter(device__pk=device_name).last()
 	if request.method == 'POST':
 		form = SettingForm(request.POST)
 		if form.is_valid():
@@ -40,11 +40,11 @@ def device_index(request, device_id):
 				setting.mode = form.cleaned_data['mode']
 				setting.fanMode = form.cleaned_data['fanMode']
 			else:
-				setting = Setting(device_id=device_id, time=update_time, mode=form.cleaned_data['mode'], fanMode=form.cleaned_data['fanMode'])
+				setting = Setting(device_name=device_name, time=update_time, mode=form.cleaned_data['mode'], fanMode=form.cleaned_data['fanMode'])
 			setting.save()
-		return HttpResponseRedirect(reverse('settings:device_index', args=[device.identifier]))
+		return HttpResponseRedirect(reverse('settings:device_index', args=[device.name]))
 	elif request.method == 'GET':
-		current_readings = Reading.objects.filter(device__pk=device_id).last()
+		current_readings = Reading.objects.filter(device__pk=device_name).last()
 		form = SettingForm(instance=setting)
 		return render(request, 'settings/device_index.html',
 			{'form': form,
@@ -58,16 +58,16 @@ def index(request):
 		return render(request, 'settings/index.html',
 			{'devices': devices})
 
-def set_temperature(request, device_id):
-	setting = Setting.objects.filter(device__pk=device_id).last()
-	device = Device.objects.get(pk=device_id)
+def set_temperature(request, device_name):
+	setting = Setting.objects.filter(device__pk=device_name).last()
+	device = Device.objects.get(pk=device_name)
 	if request.method == 'POST':
 		form = TemperatureForm(request.POST)
 		if form.is_valid():
 			if 'temperature' in form.cleaned_data:
 				setting.temperature = form.cleaned_data['temperature']
 				setting.save()
-		return HttpResponseRedirect(reverse('settings:device_index', args=[device.identifier]))
+		return HttpResponseRedirect(reverse('settings:device_index', args=[device.name]))
 	if request.method == 'GET':
 		return render(request, 'settings/individual.html',
 			{'action': 'temperature',
@@ -76,16 +76,16 @@ def set_temperature(request, device_id):
 			 'url_namespace': 'settings:temperature'}
 			)
 
-def set_humidity(request, device_id):
-	setting = Setting.objects.filter(device__pk=device_id).last()
-	device = Device.objects.get(pk=device_id)
+def set_humidity(request, device_name):
+	setting = Setting.objects.filter(device__pk=device_name).last()
+	device = Device.objects.get(pk=device_name)
 	if request.method == 'POST':
 		form = HumidityForm(request.POST)
 		if form.is_valid():
 			if 'humidity' in form.cleaned_data:
 				setting.humidity = form.cleaned_data['humidity']
 				setting.save()
-		return HttpResponseRedirect(reverse('settings:device_index', args=([device.identifier])))
+		return HttpResponseRedirect(reverse('settings:device_index', args=([device.name])))
 	if request.method == 'GET':
 		return render(request, 'settings/individual.html',
 			{'action': 'humidity',
@@ -94,15 +94,15 @@ def set_humidity(request, device_id):
 			 'url_namespace': 'settings:humidity'}
 			)
 
-def programs(request, device_id):
+def programs(request, device_name):
 	program_records = Program.objects.order_by('day', 'time', 'mode')
-	device = Device.objects.get(pk=device_id)
+	device = Device.objects.get(pk=device_name)
 	if request.method == 'POST':
 		form = ProgrammingForm(request.POST)
 		if form.is_valid():
-			program_record = Program(device_id=device.identifier, **form.cleaned_data)
+			program_record = Program(device_name=device.name, **form.cleaned_data)
 			program_record.save()
-		return HttpResponseRedirect(reverse('settings:programs', args=[device.identifier]))
+		return HttpResponseRedirect(reverse('settings:programs', args=[device.name]))
 	elif request.method == 'GET':
 		form = ProgrammingForm()
 		return render(request, 'settings/programs.html',
@@ -112,22 +112,22 @@ def programs(request, device_id):
 		)
 	
 @csrf_exempt
-def climaduino(request, device_id):
+def climaduino(request, device_name):
 	if request.method == 'POST':
 		# if the device record does not exist, create it
 		try:
-			device = Device.objects.get(pk=device_id)
+			device = Device.objects.get(pk=device_name)
 		except Device.DoesNotExist:
-			device = Device(identifier=device_id, name="unnamed-%s" % device_id)
+			device = Device(identifier=device_name, name="unnamed-%s" % device_name)
 			device.save()
 
 		update_time = timezone.now()
 
-		setting = Setting.objects.filter(device__pk=device_id).last()
+		setting = Setting.objects.filter(device__pk=device_name).last()
 		if not setting:
-			setting = Setting(device_id=device_id, time=update_time, source=1, mode=9, temperature=77, humidity=55)
+			setting = Setting(device_name=device_name, time=update_time, source=1, mode=9, temperature=77, humidity=55)
 
-		# print 'Device ID: %s' % device_id
+		# print 'Device ID: %s' % device_name
 		# print 'Data: %s' % request.body
 		try:
 			json_object = json.loads(request.body)
@@ -155,13 +155,13 @@ def climaduino(request, device_id):
 			setting.save()
 
 			# update the current readings
-			reading = Reading.objects.filter(device__pk=device_id).last()
+			reading = Reading.objects.filter(device__pk=device_name).last()
 			if reading:
 				reading.time = update_time
 				reading.temperature = json_object["readings"]["temp"]
 				reading.humidity = json_object["readings"]["humidity"]
 			else:
-				reading = Reading(device_id=device_id, time=update_time, temperature=json_object["readings"]["temp"], humidity=json_object["readings"]["humidity"])
+				reading = Reading(device_name=device_name, time=update_time, temperature=json_object["readings"]["temp"], humidity=json_object["readings"]["humidity"])
 			reading.save()
 
 	return(HttpResponse(response_string))

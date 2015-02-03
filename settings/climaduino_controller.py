@@ -96,7 +96,7 @@ def main(queue, climaduino_poll_interval_in_seconds):
 				if values:
 					print(values)
 					try:
-						database_update(device.identifier, float(values['temperature']), float(values['humidity']), int(values['tempSetPoint']), int(values['humiditySetPoint']), int(values['mode']), int(values['fanMode']), int(values['currentlyRunning']), int(values['stateChangeAllowed']))
+						database_update(device.name, float(values['temperature']), float(values['humidity']), int(values['tempSetPoint']), int(values['humiditySetPoint']), int(values['mode']), int(values['fanMode']), int(values['currentlyRunning']), int(values['stateChangeAllowed']))
 					except KeyError as details:
 						print("{} - Unable to update database: {}".format(device.name, details))
 					# clear queue, otherwise will try to send the setpoints and mode to the Arduino even though that is just where we got the information

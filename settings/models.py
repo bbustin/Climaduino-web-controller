@@ -1,14 +1,22 @@
 from django.db import models
+import json, socket
 import rrdtool_log
-import climaduino_programming_sentry
-import climaduino_controller
+# import climaduino_programming_sentry
+# import climaduino_mqtt_controller
+def send_settings(data):
+	ip = '127.0.0.1'
+	port = 64000
+	# Connect to the server
+	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+	s.connect((ip, port))
+	s.send(json.dumps(data))
+	s.close()
 
 class Device(models.Model):
-	identifier = models.IntegerField(primary_key=True)
-	name = models.CharField("Yun hostname", max_length=30)
+	name = models.CharField("Yun hostname", max_length=30, primary_key=True)
 	zonename = models.CharField("zone name", max_length=30)
 	def __unicode__(self):
-		return("%s (%d)" % (self.zonename, self.identifier))
+		return("%s (%s)" % (self.zonename, self.name))
 
 class Setting(models.Model):
 	device = models.ForeignKey("Device")
@@ -25,8 +33,8 @@ class Setting(models.Model):
 	def __unicode__(self):
 		return("%s - \n\tmode: %d\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.mode, self.temperature, self.humidity))
 	def log(self):
-		queue.put({'device_id': self.device.identifier, 'parameters': {'temp': self.temperature, 'humidity': self.humidity}})
-		queue_update_parameters.put({'device_id': self.device.identifier, 'parameters': {'temp': self.temperature, 'humidity': self.humidity, 'mode': self.mode, 'fanMode': self.fanMode,}})		
+		send_settings({self.device.name: {'settings': {'temp': self.temperature, 'humidity': self.humidity}}})
+	# 	queue_update_parameters.put({self.device.name: {'settings': {'temp': self.temperature, 'humidity': self.humidity, 'mode': self.mode, 'fanMode': self.fanMode,}}})		
 	# overriding save so we can also log to rrdtool in addition to updating the DB
 	def save(self, *args, **kwargs):
 		self.log()
@@ -39,11 +47,11 @@ class Reading(models.Model):
 	humidity = models.DecimalField(max_digits=5, decimal_places=2)
 	def __unicode__(self):
 		return("%s - Readings:\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.temperature, self.humidity))
-	def log(self):
-		queue.put({'device_id': self.device.identifier, 'readings': {'temp': self.temperature, 'humidity': self.humidity}})
+	# def log(self):
+	# 	queue.put({self.device.name: {'readings': {'temp': self.temperature, 'humidity': self.humidity}}})
 	# overriding save so we can also log to rrdtool in addition to updating the DB
 	def save(self, *args, **kwargs):
-		self.log()
+		# self.log()
 		super(Reading, self).save(*args, **kwargs) # save the DB record
 
 class Program(models.Model):
@@ -61,17 +69,17 @@ class Program(models.Model):
 	class Meta:
 		unique_together = ('device', 'mode', 'day', 'time',)
 
-# Create a process to log to rrd_tool
-import multiprocessing
-queue = multiprocessing.Queue()
-logger_process = multiprocessing.Process(target=rrdtool_log.main, name="rrdtool logger", args=[queue, 4])
-logger_process.daemon = True
-logger_process.start()
+# # Create a process to log to rrd_tool
+# import multiprocessing
+# queue = multiprocessing.Queue()
+# logger_process = multiprocessing.Process(target=rrdtool_log.main, name="rrdtool logger", args=[queue, 4])
+# logger_process.daemon = True
+# logger_process.start()
 
-queue_update_parameters = multiprocessing.Queue()
-controller_process = multiprocessing.Process(target=climaduino_controller.main, name="climaduino controller", args=[queue_update_parameters, 15])
-controller_process.daemon = True
-controller_process.start()
-programming_sentry_process = multiprocessing.Process(target=climaduino_programming_sentry.main, name="programming sentry", args=[60])
-programming_sentry_process.daemon = True
-programming_sentry_process.start()
+# queue_update_parameters = multiprocessing.Queue()
+# controller_process = multiprocessing.Process(target=climaduino_mqtt_controller.main, name="climaduino controller", args=[queue_update_parameters])
+# controller_process.daemon = True
+# controller_process.start()
+# programming_sentry_process = multiprocessing.Process(target=climaduino_programming_sentry.main, name="programming sentry", args=[60])
+# programming_sentry_process.daemon = True
+# programming_sentry_process.start()

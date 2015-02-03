@@ -1,12 +1,12 @@
 {% extends "base_template.html" %}
 {% block title %}Climaduino Settings - {{device}}{% endblock %}
 {% block header %}
-<a href="{% url 'settings:device_index' device.identifier%}" data-icon="delete">Cancel</a>
+<a href="{% url 'settings:device_index' device.name%}" data-icon="delete">Cancel</a>
 <h1>{{device.name}} {{ action }}</h1>
 <a href="javascript:document.getElementById('update_parameter').submit();" data-icon="check" data-theme="b">Save</a>
 {% endblock %}
 {% block content %}
-			<form action="{% url url_namespace device.identifier %}" method="post" id="update_parameter">
+			<form action="{% url url_namespace device.name %}" method="post" id="update_parameter">
 				{% csrf_token %}
 				<input id="id_{{action}}", name="{{action}}", type="number", pattern="[0-9]*", value="{{form_value}}" />
 			</form>
