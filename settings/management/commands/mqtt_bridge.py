@@ -16,6 +16,7 @@ def on_connect(client, userdata, flags, rc):
 	# reconnect then subscriptions will be renewed.
 	client.subscribe("climaduino/+/readings/#")
 	client.subscribe("climaduino/+/status/#")
+	self.stdout.write("Connected to MQTT broker")
 
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
@@ -24,9 +25,26 @@ def on_message(client, userdata, msg):
 	database_update(data)
 	print(str(data))
 
+def on_disconnect(client, userdata, rc):
+    if rc != 0:
+        print("Connection to MQTT broker unexpectedly lost")
+        connected = False
+        while not connected:
+	        try:
+	        	client.reconnect()
+	        except (socket.gaierror, socket.error):
+	        	print("Reconnection failed. Will try again shortly.")
+	        	time.sleep(30)
+	        else:
+	        	connected = True
+	        	print("Reconnected")
+	else:
+		print("Disconnected from MQTT broker")
+
 client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
+client.on_disconnect = on_disconnect
 
 class Command(BaseCommand):
 	args = 'There are no args!'
@@ -63,7 +81,6 @@ class Command(BaseCommand):
 		self.stdout.write("Listening for setting changes on socket {}".format(socket_address))
 
 		client.connect("test.mosquitto.org", 1883, 60)
-		self.stdout.write("Connected to MQTT broker")
 		# print results from all Climaduinos and update DB
 		last_poll = time.time()
 		while 1:

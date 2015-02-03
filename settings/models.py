@@ -1,6 +1,5 @@
 from django.db import models
 import json, socket
-# import programming_sentry
 
 def send_settings(data):
 	# Connect to the server
@@ -58,13 +57,7 @@ class Program(models.Model):
 	temperature = models.IntegerField()
 	humidity = models.IntegerField()
 	def __unicode__(self):
-		return("%s at %s, %s, temperature: %d humidity: %d" % (self.get_day_display(), self.time, self.get_mode_display(), self.temperature, self.humidity))
+		return("%s: %s at %s, %s, temperature: %d humidity: %d" % (self.device, self.get_day_display(), self.time, self.get_mode_display(), self.temperature, self.humidity))
 	# prevent creating more than 1 program for any specific day of week/time combination for any device
 	class Meta:
 		unique_together = ('device', 'mode', 'day', 'time',)
-
-# # Start the programming Sentry that checks if any programmed setting changes need to be made on any of the Climaduinos
-# import multiprocessing
-# programming_sentry_process = multiprocessing.Process(target=programming_sentry.main, name="programming sentry", args=[60])
-# programming_sentry_process.daemon = True
-# programming_sentry_process.start()
