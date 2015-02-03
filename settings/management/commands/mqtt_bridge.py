@@ -18,7 +18,7 @@ class Command(BaseCommand):
 
 	def handle(self, *args, **options):
 		self.stdout.write("Climaduino MQTT bridge started")
-		open_socket('/tmp/climaduino_mqtt_bridge', ReceiveSettingsHandler)
+		open_SocketServer('/tmp/climaduino_mqtt_bridge', ReceiveSettingsHandler)
 		mqtt_connect("test.mosquitto.org")
 		# print results from all Climaduinos and update DB
 		last_poll = time.time()
@@ -26,7 +26,7 @@ class Command(BaseCommand):
 			client.loop(timeout=1)
 			time.sleep(.5)
 
-def open_socket(socket_address, handler):
+def open_SocketServer(socket_address, handler):
 	# clean up stale socket if there is one
 	try:
 		os.remove(socket_address)
