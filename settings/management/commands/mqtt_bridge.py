@@ -10,7 +10,6 @@ import json
 
 import SocketServer, threading, socket
 
-client = mqtt.Client()
 # The callback for when the client receives a CONNACK response from the server.
 def on_connect(client, userdata, flags, rc):
 	# Subscribing in on_connect() means that if we lose the connection and
@@ -25,6 +24,7 @@ def on_message(client, userdata, msg):
 	database_update(data)
 	print(str(data))
 
+client = mqtt.Client()
 client.on_connect = on_connect
 client.on_message = on_message
 
@@ -34,24 +34,33 @@ class Command(BaseCommand):
 
 	def handle(self, *args, **options):
 		self.stdout.write("Climaduino Controller started")
+		socket_address = ('/tmp/climaduino_mqtt_bridge')
+
+		# clean up stale socket if there is one
+		try:
+			os.remove(socket_address)
+		except OSError:
+			pass
 
 		connected = False
 		tries = 0
 		while not connected and tries <= 20:
 			tries += 1
 			try:
-				address = ('localhost', 64000) # let the kernel give us a port
-				server = SocketServer.TCPServer(address, ReceiveSettingsHandler)
-				(ip, port) = server.server_address # find out what port we were given
+				server = SocketServer.UnixStreamServer(socket_address, ReceiveSettingsHandler)
 				t = threading.Thread(target=server.serve_forever)
 				t.setDaemon(True) # don't hang on exit
 				t.start()
-			except socket.error:
-				self.stdout.write("Error starting server. Will retry shortly.")
+			except socket.error as error:
+				self.stdout.write("Error starting server. Will retry shortly.\n\t{}".format(error))
 				time.sleep(5)
 			else:
 				connected = True
-		self.stdout.write("Listening for setting changes at {}:{}".format(ip, port))
+
+		if not connected:
+			raise Exception("Unable to listen for setting changes")
+
+		self.stdout.write("Listening for setting changes on socket {}".format(socket_address))
 
 		client.connect("test.mosquitto.org", 1883, 60)
 		self.stdout.write("Connected to MQTT broker")

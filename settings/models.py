@@ -1,12 +1,11 @@
 from django.db import models
 import json, socket
+# import programming_sentry
 
 def send_settings(data):
-	ip = '127.0.0.1'
-	port = 64000
 	# Connect to the server
-	s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-	s.connect((ip, port))
+	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+	s.connect('/tmp/climaduino_mqtt_bridge')
 	s.send(json.dumps(data))
 	s.close()
 
@@ -28,12 +27,9 @@ class Setting(models.Model):
 	humidity = models.IntegerField(default=55)
 	def __unicode__(self):
 		return("%s - \n\tmode: %d\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.mode, self.temperature, self.humidity))
-	def log(self):
-		send_settings({self.device.name: {'settings': {'mode': self.mode, 'fanMode': self.fanMode, 'tempSetPoint': self.temperature, 'humiditySetPoint': self.humidity}}})
-	# 	queue_update_parameters.put({self.device.name: {'settings': {'temp': self.temperature, 'humidity': self.humidity, 'mode': self.mode, 'fanMode': self.fanMode,}}})		
-	# overriding save so we can also log to rrdtool in addition to updating the DB
 	def save(self, *args, **kwargs):
-		self.log()
+		# send the settings to the mqtt_bridge so the Climaduino will receive them
+		send_settings({self.device.name: {'settings': {'mode': self.mode, 'fanMode': self.fanMode, 'tempSetPoint': self.temperature, 'humiditySetPoint': self.humidity}}})
 		super(Setting, self).save(*args, **kwargs) # save the DB record
 
 class Status(models.Model):
@@ -51,12 +47,6 @@ class Reading(models.Model):
 	humidity = models.DecimalField(max_digits=5, decimal_places=2)
 	def __unicode__(self):
 		return("%s - Readings:\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.temperature, self.humidity))
-	# def log(self):
-	# 	queue.put({self.device.name: {'readings': {'temp': self.temperature, 'humidity': self.humidity}}})
-	# overriding save so we can also log to rrdtool in addition to updating the DB
-	def save(self, *args, **kwargs):
-		# self.log()
-		super(Reading, self).save(*args, **kwargs) # save the DB record
 
 class Program(models.Model):
 	device = models.ForeignKey("Device")
@@ -73,17 +63,8 @@ class Program(models.Model):
 	class Meta:
 		unique_together = ('device', 'mode', 'day', 'time',)
 
-# # Create a process to log to rrd_tool
+# # Start the programming Sentry that checks if any programmed setting changes need to be made on any of the Climaduinos
 # import multiprocessing
-# queue = multiprocessing.Queue()
-# logger_process = multiprocessing.Process(target=rrdtool_log.main, name="rrdtool logger", args=[queue, 4])
-# logger_process.daemon = True
-# logger_process.start()
-
-# queue_update_parameters = multiprocessing.Queue()
-# controller_process = multiprocessing.Process(target=climaduino_mqtt_controller.main, name="climaduino controller", args=[queue_update_parameters])
-# controller_process.daemon = True
-# controller_process.start()
-# programming_sentry_process = multiprocessing.Process(target=climaduino_programming_sentry.main, name="programming sentry", args=[60])
+# programming_sentry_process = multiprocessing.Process(target=programming_sentry.main, name="programming sentry", args=[60])
 # programming_sentry_process.daemon = True
 # programming_sentry_process.start()
