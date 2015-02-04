@@ -2,10 +2,26 @@
 # http://www.dabeaz.com/coroutines/index.html
 # http://lgiordani.github.io/blog/2013/03/25/python-generators-from-iterators-to-cooperative-multitasking/
 import time, os
+from django.core.management.base import BaseCommand, CommandError
+import json
+
 try:
 	import rrdtool
 except ImportError:
 	print("python-rrdtool library is not installed\nNo logging will be available")
+
+from _common import BridgeServer
+
+data = {}
+def socket_handler(self, raw_data):
+	json_data = json.loads(raw_data)
+	for (device, values) in json_data.items():
+		try:
+			data[device].update(values)
+		except KeyError:
+			data[device] = values
+	print(data)
+	# log_data(data)
 
 def create_database(file_name, interval_in_seconds="60"): 
 	error = rrdtool.create(
@@ -36,89 +52,35 @@ def create_database(file_name, interval_in_seconds="60"):
 	if error:
 		raise Exception(rrdtool.error())
 
-def coroutine(func):
-	'''Convenience decorator to call the first .next() to 'prime' the
-	co-routine
+def log_data(data):
+	print(data)
+	for device in data:
+		rrd_file = "temp_humidity-%s.rrd" % device
+		try:
+			rrdtool.update(rrd_file, "N:%f:%f:%f:%f" % (data[device]["readings"]["temperature"], data[device]["settings"]["tempSetPoint"], data[device]["readings"]["humidity"], data[device]["settings"]["humiditySetPoint"]))
+		except rrdtool.error as details:
+			print(details)
+			print("Database probably does not exist. Attempting to create it.")
+			create_database(file_name=rrd_file)
+		except KeyError as details:
+			print("%s data was missing. Skipped." % details)
 
-	taken from one of the sources listed at the top of the page'''
+class Command(BaseCommand):
+	args = 'There are no args!'
+	help = 'RRDTool logger in charge of logging readings and system setting changes.'
 
-	def start(*args,**kwargs):
-		cr = func(*args,**kwargs)
-		cr.next()
-		return cr
-	return start
+	def handle(self, *args, **options):
+		# do not run if rrdtool has not been imported
+		try:
+			rrdtool
+		except NameError:
+			return
+		import Queue
+		# set process niceness value to lower its priority
+		os.nice(1)
+		bridge_server = BridgeServer()
+		bridge_server.socket_start('/tmp/climaduino_rrdtool_logger', socket_handler)
+		# keep running indefinitely
+		while 1:
+			time.sleep(5)
 
-@coroutine
-def log_data():
-	while 1:
-		data = (yield)
-		for device in data:
-			rrd_file = "temp_humidity-%s.rrd" % device
-			try:
-				rrdtool.update(rrd_file, "N:%f:%f:%f:%f" % (data[device]["readings"]["temperature"], data[device]["settings"]["tempSetPoint"], data[device]["readings"]["humidity"], data[device]["settings"]["humiditySetPoint"]))
-			except rrdtool.error as details:
-				print(details)
-				print("Database probably does not exist. Attempting to create it.")
-				create_database(file_name=rrd_file)
-			except KeyError as details:
-				print("%s data was missing. Skipped." % details)
-
-@coroutine
-def display_data():
-	import pprint
-	while 1:
-		data = (yield)
-		pprint.pprint(data)
-		# try:
-		# 	for key in data:
-		# 		print("---- %s ----" % key)
-		# 		message = []
-		# 		for item in data[key]:
-		# 			message.append("%s: %s" % (item, data[key][item]))
-		# 		print(", ".join(message))
-		# except:
-		# 	pass
-
-@coroutine
-def broadcast(targets):
-	while 1:
-		data = (yield)
-		for target in targets:
-			target.send(data)
-
-def main(queue, interval_in_seconds):
-	# do not run if rrdtool has not been imported
-	try:
-		rrdtool
-	except NameError:
-		return
-	import Queue
-	# set process niceness value to lower its priority
-	os.nice(1)
-
-	# comment the line below and uncomment the line below it if you want the data logged to screen
-	data_logger = broadcast([log_data()]) #broadcast data to logger
-	#data_logger = broadcast([log_data(), display_data()]) #broadcast data to logger and print to screen
-
-	# We are going to create a loop that looks for a line on Serial. If there is a line,
-	# send it to the co-routine that interprets and logs it.
-	#
-	# If there is a message to send on Serial, it picks it up, and sends it.
-	print("rrdtool logger started")
-	while 1:
-		items_available = True
-		data_item={}
-		while items_available:
-			try:
-				item = queue.get(False) #non-blocking read
-			except Queue.Empty:
-				items_available = False
-			else:
-				data_item.update(item)
-		if len(data_item)>0:
-			data_logger.send(data_item)
-		time.sleep(interval_in_seconds)
-
-# # if called directly from the command line, then execute the main() function
-# if __name__ == "__main__":
-# 	main()

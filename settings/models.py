@@ -1,10 +1,13 @@
 from django.db import models
 import json, socket, multiprocessing
 
-def send_settings(data):
+socket_mqtt_bridge = '/tmp/climaduino_mqtt_bridge'
+socket_rrdtool_logger = '/tmp/climaduino_rrdtool_logger'
+
+def send_settings(data, socket_path):
 	# Connect to the server
 	s = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-	s.connect('/tmp/climaduino_mqtt_bridge')
+	s.connect(socket_path)
 	s.send(json.dumps(data))
 	s.close()
 
@@ -26,11 +29,17 @@ class Setting(models.Model):
 	humidity = models.IntegerField(default=55)
 	def __unicode__(self):
 		return("%s - \n\tmode: %d\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.mode, self.temperature, self.humidity))
+	def json_output(self):
+		return({self.device.name: {'settings': {'mode': self.mode, 'fanMode': self.fanMode, 'tempSetPoint': self.temperature, 'humiditySetPoint': self.humidity}}})
+	def send_rrdtool(self):
+		send_settings(self.json_output(), socket_rrdtool_logger)
+	def send_mqtt_bridge(self):
+		send_settings(self.json_output(), socket_mqtt_bridge)
 	def save(self, *args, **kwargs):
 		# send the settings to the mqtt_bridge so the Climaduino will receive them and to the rrd_tool logger
-		settings = {self.device.name: {'settings': {'mode': self.mode, 'fanMode': self.fanMode, 'tempSetPoint': self.temperature, 'humiditySetPoint': self.humidity}}}
-		send_settings(settings)
-		queue.put(settings)
+		settings = self.json_output
+		self.send_rrdtool()
+		self.send_mqtt_bridge()
 		super(Setting, self).save(*args, **kwargs) # save the DB record
 
 class Status(models.Model):
@@ -48,9 +57,14 @@ class Reading(models.Model):
 	humidity = models.DecimalField(max_digits=5, decimal_places=2)
 	def __unicode__(self):
 		return("%s - Readings:\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.temperature, self.humidity))
-	# def save(self, *args, **kwargs):
-	# 	readings = {self.device.name: {'readings': {'temperature': self.temperature, 'humidity': self.humidity}}}
-	# 	super(Setting, self).save(*args, **kwargs) # save the DB record
+	def json_output(self):
+		return({self.device.name: {'readings': {'temperature': str(self.temperature), 'humidity': str(self.humidity)}}})
+	def send_rrdtool(self):
+		send_settings(self.json_output(), socket_rrdtool_logger)
+
+	def save(self, *args, **kwargs):
+		self.send_rrdtool()
+		super(Reading, self).save(*args, **kwargs) # save the DB record
 
 class Program(models.Model):
 	device = models.ForeignKey("Device")
