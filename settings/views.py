@@ -40,7 +40,7 @@ def device_index(request, device_name):
 				setting.mode = form.cleaned_data['mode']
 				setting.fanMode = form.cleaned_data['fanMode']
 			else:
-				setting = Setting(device=device_name, time=update_time, mode=form.cleaned_data['mode'], fanMode=form.cleaned_data['fanMode'])
+				setting = Setting(device=device, time=update_time, mode=form.cleaned_data['mode'], fanMode=form.cleaned_data['fanMode'])
 			setting.save()
 		return HttpResponseRedirect(reverse('settings:device_index', args=[device.name]))
 	elif request.method == 'GET':
@@ -100,7 +100,7 @@ def programs(request, device_name):
 	if request.method == 'POST':
 		form = ProgrammingForm(request.POST)
 		if form.is_valid():
-			program_record = Program(device_name=device.name, **form.cleaned_data)
+			program_record = Program(device=device.name, **form.cleaned_data)
 			program_record.save()
 		return HttpResponseRedirect(reverse('settings:programs', args=[device.name]))
 	elif request.method == 'GET':
