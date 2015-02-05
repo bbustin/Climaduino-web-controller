@@ -24,13 +24,12 @@ def socket_handler(self, raw_data):
 	log_data(data, "") #put "/tmp/"" as second argument if testing in Vagrant
 
 def create_database(file_name, interval_in_seconds="60"): 
-	heartbeat = interval_in_seconds-1
 	error = rrdtool.create(
 		file_name, "--step", interval_in_seconds,
-		"DS:temperature:GAUGE:{}:U:U".format(heartbeat),
-		"DS:temperatureSetPoint:GAUGE:{}:U:U".format(heartbeat),
-		"DS:humidity:GAUGE:{}:U:U".format(heartbeat),
-		"DS:humiditySetPoint:GAUGE:{}:U:U".format(heartbeat),
+		"DS:temperature:GAUGE:60:U:U",
+		"DS:temperatureSetPoint:GAUGE:60:U:U",
+		"DS:humidity:GAUGE:60:U:U",
+		"DS:humiditySetPoint:GAUGE:60:U:U",
 		"RRA:AVERAGE:0.2:1:1440", # 1 day of 1-minute accuracy averages
 		"RRA:AVERAGE:0.2:5:8640", # 30 days of 5-minute accuracy averages	
 		"RRA:AVERAGE:0.2:15:8640", # 90 days 15 minute averages
