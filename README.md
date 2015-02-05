@@ -25,7 +25,7 @@ Steps for a Raspberry Pi:
 -- sudo apt-get install -y build-essential python-dev python-setuptools libcairo2-dev libpango1.0-dev libxml2-dev rrdtool librrd-dev mosquitto libnss-mdns screen git
 
 - Install Climaduino controller
--- git clone -b feature/mqtt_pubsub_model https://github.com/bbustin/Climaduino-web-controller.git ~/climaduino #(NOTE: ADDRESS SHOULD BE CHANGED TO MASTER BRANCH WHEN FEATURE COMPLETE)
+-- git clone -b develop https://github.com/bbustin/Climaduino-web-controller.git ~/climaduino #(NOTE: ADDRESS SHOULD BE CHANGED TO MASTER BRANCH WHEN FEATURE COMPLETE)
 -- cd ~/climaduino
 -- sudo python setup.py develop
 -- python manage.py syncdb
