@@ -40,7 +40,7 @@ def device_index(request, device_name):
 				setting.mode = form.cleaned_data['mode']
 				setting.fanMode = form.cleaned_data['fanMode']
 			else:
-				setting = Setting(device_name=device_name, time=update_time, mode=form.cleaned_data['mode'], fanMode=form.cleaned_data['fanMode'])
+				setting = Setting(device=device_name, time=update_time, mode=form.cleaned_data['mode'], fanMode=form.cleaned_data['fanMode'])
 			setting.save()
 		return HttpResponseRedirect(reverse('settings:device_index', args=[device.name]))
 	elif request.method == 'GET':
@@ -110,58 +110,3 @@ def programs(request, device_name):
 		 'programs': program_records,
 		 'device': device}
 		)
-	
-@csrf_exempt
-def climaduino(request, device_name):
-	if request.method == 'POST':
-		# if the device record does not exist, create it
-		try:
-			device = Device.objects.get(pk=device_name)
-		except Device.DoesNotExist:
-			device = Device(identifier=device_name, name="unnamed-%s" % device_name)
-			device.save()
-
-		update_time = timezone.now()
-
-		setting = Setting.objects.filter(device__pk=device_name).last()
-		if not setting:
-			setting = Setting(device_name=device_name, time=update_time, source=1, mode=9, temperature=77, humidity=55)
-
-		# print 'Device ID: %s' % device_name
-		# print 'Data: %s' % request.body
-		try:
-			json_object = json.loads(request.body)
-		except ValueError:
-			# print("Not valid JSON")
-			json_object = None
-		else:
-			print('JSON: %s' % json_object)
-			pass
-
-		response_string = "^" #delimeter to indicate this is where Climaduino should start its parsing
-		# if we get valid data from the Climaduino
-		if json_object:
-			# if we have a previous setting, compare to the data from the Climaduino
-			## then determine what to do. Right now, overwrite Climaduino as it is just a remote
-			## need way for Climaduino with display to not be overwritten when temp set locally on it
-			if setting:
-				if setting.mode != json_object['parameters']['mode']:
-					response_string = "%s%sM" % (response_string, setting.mode)
-				if setting.temperature != json_object['parameters']['temp']:
-				 	response_string = "%s%sF" % (response_string, setting.temperature)
-				if setting.humidity != json_object['parameters']['humidity']:
-					response_string = "%s%s%%" % (response_string, setting.humidity)
-			# log settings (to rrdtool)
-			setting.save()
-
-			# update the current readings
-			reading = Reading.objects.filter(device__pk=device_name).last()
-			if reading:
-				reading.time = update_time
-				reading.temperature = json_object["readings"]["temp"]
-				reading.humidity = json_object["readings"]["humidity"]
-			else:
-				reading = Reading(device_name=device_name, time=update_time, temperature=json_object["readings"]["temp"], humidity=json_object["readings"]["humidity"])
-			reading.save()
-
-	return(HttpResponse(response_string))
