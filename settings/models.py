@@ -1,5 +1,8 @@
 from django.db import models
-import json, socket, multiprocessing
+import socket, multiprocessing
+
+# using simplejson as the stdlib json library can not handle decimals
+import simplejson as json
 
 socket_mqtt_bridge = '/tmp/climaduino_mqtt_bridge'
 socket_rrdtool_logger = '/tmp/climaduino_rrdtool_logger'
@@ -32,12 +35,15 @@ class Setting(models.Model):
 	def json_output(self):
 		return({self.device.name: {'settings': {'mode': self.mode, 'fanMode': self.fanMode, 'tempSetPoint': self.temperature, 'humiditySetPoint': self.humidity}}})
 	def send_rrdtool(self):
-		send_settings(self.json_output(), socket_rrdtool_logger)
+		try:
+			send_settings(self.json_output(), socket_rrdtool_logger)
+		except socket.error:
+			print("Unable to send setting to rrdtool_logger")
 	def send_mqtt_bridge(self):
 		send_settings(self.json_output(), socket_mqtt_bridge)
 	def save(self, *args, **kwargs):
 		# send the settings to the mqtt_bridge so the Climaduino will receive them and to the rrd_tool logger
-		settings = self.json_output
+		settings = self.json_output()
 		self.send_rrdtool()
 		self.send_mqtt_bridge()
 		super(Setting, self).save(*args, **kwargs) # save the DB record
@@ -58,10 +64,12 @@ class Reading(models.Model):
 	def __unicode__(self):
 		return("%s - Readings:\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.temperature, self.humidity))
 	def json_output(self):
-		return({self.device.name: {'readings': {'temperature': str(self.temperature), 'humidity': str(self.humidity)}}})
+		return({self.device.name: {'readings': {'temperature': self.temperature, 'humidity': self.humidity}}})
 	def send_rrdtool(self):
-		send_settings(self.json_output(), socket_rrdtool_logger)
-
+		try:
+			send_settings(self.json_output(), socket_rrdtool_logger)
+		except socket.error:
+			print("Unable to send reading to rrdtool_logger")
 	def save(self, *args, **kwargs):
 		self.send_rrdtool()
 		super(Reading, self).save(*args, **kwargs) # save the DB record

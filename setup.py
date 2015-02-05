@@ -5,6 +5,7 @@ requires = [
     'python-rrdtool',
     'paho-mqtt',
     'django',
+    'simplejson',
     ]
 
 setup(

@@ -3,7 +3,8 @@
 # http://lgiordani.github.io/blog/2013/03/25/python-generators-from-iterators-to-cooperative-multitasking/
 import time, os
 from django.core.management.base import BaseCommand, CommandError
-import json
+# using simplejson as the stdlib json library can not handle decimals
+import simplejson as json
 
 try:
 	import rrdtool
@@ -20,8 +21,7 @@ def socket_handler(self, raw_data):
 			data[device].update(values)
 		except KeyError:
 			data[device] = values
-	print(data)
-	# log_data(data)
+	log_data(data, "/tmp/")
 
 def create_database(file_name, interval_in_seconds="60"): 
 	error = rrdtool.create(
@@ -52,10 +52,9 @@ def create_database(file_name, interval_in_seconds="60"):
 	if error:
 		raise Exception(rrdtool.error())
 
-def log_data(data):
-	print(data)
+def log_data(data, directory=""):
 	for device in data:
-		rrd_file = "temp_humidity-%s.rrd" % device
+		rrd_file = str("%stemp_humidity-%s.rrd" % (directory, device)) # fails if not converted to string - TypeError: argument 0 must be string or list of strings
 		try:
 			rrdtool.update(rrd_file, "N:%f:%f:%f:%f" % (data[device]["readings"]["temperature"], data[device]["settings"]["tempSetPoint"], data[device]["readings"]["humidity"], data[device]["settings"]["humiditySetPoint"]))
 		except rrdtool.error as details:
@@ -63,7 +62,9 @@ def log_data(data):
 			print("Database probably does not exist. Attempting to create it.")
 			create_database(file_name=rrd_file)
 		except KeyError as details:
-			print("%s data was missing. Skipped." % details)
+			print("%s data was missing. Skipped. If missing 'settings' data, try restarting the mqtt_broker..." % details)
+		except (ValueError, TypeError) as details:
+			print("One or more values missing or incorrect. This should fix itself shortly as new temperature and humidity readings come in. %s" % details)
 
 class Command(BaseCommand):
 	args = 'There are no args!'
@@ -78,6 +79,8 @@ class Command(BaseCommand):
 		import Queue
 		# set process niceness value to lower its priority
 		os.nice(1)
+
+		print("Climaduino rrdtool logger Started")
 		bridge_server = BridgeServer()
 		bridge_server.socket_start('/tmp/climaduino_rrdtool_logger', socket_handler)
 		# keep running indefinitely

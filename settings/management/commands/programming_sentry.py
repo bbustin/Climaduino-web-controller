@@ -26,7 +26,7 @@ class Command(BaseCommand):
 		os.nice(1)
 				
 
-		print("Climaduino Programming Sentry Active")
+		print("Climaduino Programming Sentry Started")
 		while 1:
 			print("Programming: Checking")
 			now = datetime.datetime.now()

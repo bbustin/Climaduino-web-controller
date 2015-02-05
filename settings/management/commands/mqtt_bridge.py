@@ -6,9 +6,10 @@ from django.utils import timezone
 import paho.mqtt.client as mqtt
 import os, time
 
-import json
-
 import SocketServer, threading, socket
+
+# using simplejson as the stdlib json library can not handle decimals
+import simplejson as json
 
 client = mqtt.Client()
 
@@ -17,11 +18,10 @@ class Command(BaseCommand):
 	help = 'Starts up communication with Climaduinos via the MQTT broker'
 
 	def handle(self, *args, **options):
-		self.stdout.write("Climaduino MQTT bridge started")
+		print("Climaduino MQTT bridge started")
 		open_SocketServer('/tmp/climaduino_mqtt_bridge', ReceiveSettingsHandler)
 		seed_settings()
 		mqtt_connect("test.mosquitto.org")
-		# print results from all Climaduinos and update DB
 		last_poll = time.time()
 		while 1:
 			client.loop(timeout=1)
@@ -44,7 +44,7 @@ def open_SocketServer(socket_address, handler):
 			t.setDaemon(True) # don't hang on exit
 			t.start()
 		except socket.error as error:
-			self.stdout.write("Error starting server. Will retry shortly.\n\t{}".format(error))
+			print("Error starting server. Will retry shortly.\n\t{}".format(error))
 			time.sleep(5)
 		else:
 			connected = True
@@ -138,9 +138,15 @@ def on_connect(client, userdata, flags, rc):
 # The callback for when a PUBLISH message is received from the server.
 def on_message(client, userdata, msg):
 	(device, category, item) = msg.topic.replace("climaduino/", "").split("/", 2)
+
+	# convert any strings that are really numbers into decimal
+	try:
+		msg.payload = float(msg.payload)
+	except ValueError:
+		pass
+
 	data = {device: {category: {item: msg.payload}}}
 	database_update(data)
-	print(str(data))
 
 def on_disconnect(client, userdata, rc):
 	if rc != 0:
@@ -169,7 +175,10 @@ class ReceiveSettingsHandler(SocketServer.BaseRequestHandler):
 					# Convert boolean values to 0 and 1
 					if isinstance(value, bool):
 						value = int(value)
-					client.publish('climaduino/{}/settings/{}'.format(device, key), value)
+					# 'retain=True' so settings persist on MQTT broker. Fixes for case where Climaduino is unplugged
+					# or being rebooted and new settings are issued. Without retain it would still have its old
+					# settings
+					client.publish('climaduino/{}/settings/{}'.format(device, key), value, retain=True)
 					time.sleep(0.1) # does not seem to work reliably without a slight pause
 			except KeyError:
 				print("Invalid data received: {}".format(data))
