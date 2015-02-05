@@ -28,9 +28,9 @@ Steps for a Raspberry Pi:
 -- git clone -b feature/mqtt_pubsub_model https://github.com/bbustin/Climaduino-web-controller.git ~/climaduino #(NOTE: ADDRESS SHOULD BE CHANGED TO MASTER BRANCH WHEN FEATURE COMPLETE)
 -- cd ~/climaduino
 -- sudo python setup.py develop
--- sudo python manage.py syncdb
+-- python manage.py syncdb
 -- sudo cp ~/climaduino/startup_script\ for\ Debian/climaduino-controller /etc/init.d
--- update-rc.d climaduino-controller defaults
+-- sudo update-rc.d climaduino-controller defaults
 -- sudo reboot
 
 
