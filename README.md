@@ -5,13 +5,9 @@ The Climaduino Controller interacts one or more Arduino Yún-based Climaduino Th
 
 The controller communicates with the thermostat using the MQTT pub/sub protocol over the network. The controller leverages the Django web framework and JQuery Mobile to provide a site optimized for mobile.
 
-More information
-----------------
-
-See the instructable about the previous version is available here: http://www.instructables.com/id/Introducing-Climaduino-The-Arduino-Based-Thermosta/
-
 Installation steps for new version
 ----------------------------------
+
 Newest version does not need to run from a Raspberry Pi. It should be able to run on any Unix-like operating system.
 
 Steps for a Raspberry Pi:
@@ -41,3 +37,8 @@ Steps applicable to all:
 
 - To stop Climaduino controller
 -- sudo service climaduino-controller stop
+
+More information
+----------------
+
+See the instructable about the previous version is available here: http://www.instructables.com/id/Introducing-Climaduino-The-Arduino-Based-Thermosta/
