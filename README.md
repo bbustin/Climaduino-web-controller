@@ -35,6 +35,8 @@ Steps for a Raspberry Pi:
 
 - To manually start Climaduino controller
 -- sudo service climaduino-controller start
+-- web interface accessible at http://climaduino.local
+-- admin interface at http://climaduino.local/admin
 
 - To stop Climaduino controller
 -- sudo service climaduino-controller stop

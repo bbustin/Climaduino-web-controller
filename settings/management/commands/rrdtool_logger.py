@@ -21,7 +21,7 @@ def socket_handler(self, raw_data):
 			data[device].update(values)
 		except KeyError:
 			data[device] = values
-	log_data(data, "/tmp/")
+	log_data(data, "") #put "/tmp/"" as second argument if testing in Vagrant
 
 def create_database(file_name, interval_in_seconds="60"): 
 	error = rrdtool.create(
