@@ -15,7 +15,7 @@ case "$1" in
     ;;
   stop)
     echo "Stopping climaduino-controller"
-    sh stop_web_controller
+    sh stop_web_controller.sh
     ;;
   *)
     echo "Usage: /etc/init.d/climaduino-controller {start|stop}"
