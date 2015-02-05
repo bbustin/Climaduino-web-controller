@@ -1,14 +1,14 @@
 Climaduino Controller
 =====================
 
-The Climaduino Controller is Raspberry Pi-based and interacts with the Arduino-based Climaduino Thermostat to provide a web interface optimized for mobile use. The Web Controller allows parameters on the Thermostat to be tweaked and generates historical graphs of temperature and humidity readings. It also can be used as a programmable thermostat.
+The Climaduino Controller interacts one or more Arduino Yún-based Climaduino Thermostats using the MQTT protocol. It provides a web interface optimized for mobile use. It can be run on a Raspberry Pi or any machine with a Unix-like OS. The Web Controller allows parameters on the Thermostat to be tweaked and generates historical graphs of temperature and humidity readings. It also can be used as a programmable thermostat.
 
-The controller communicates with the thermostat over a serial connection provided over USB. There is a USB cable connecting both the Arduino and the Raspberry Pi. The controller leverages the Django web framework and JQuery Mobile to provide a site optimized for mobile.
+The controller communicates with the thermostat using the MQTT pub/sub protocol over the network. The controller leverages the Django web framework and JQuery Mobile to provide a site optimized for mobile.
 
 More information
 ----------------
 
-See the instructable with all the information here: http://www.instructables.com/id/Introducing-Climaduino-The-Arduino-Based-Thermosta/
+See the instructable about the previous version is available here: http://www.instructables.com/id/Introducing-Climaduino-The-Arduino-Based-Thermosta/
 
 Installation steps for new version
 ----------------------------------
@@ -21,6 +21,7 @@ Steps for a Raspberry Pi:
 -- Advanced Options > Memory Split = 16
 - set up networking and possibly WiFi
 
+Steps applicable to all:
 - Install the following
 -- sudo apt-get install -y build-essential python-dev python-setuptools libcairo2-dev libpango1.0-dev libxml2-dev rrdtool librrd-dev mosquitto libnss-mdns screen git
 
