@@ -8,5 +8,4 @@ urlpatterns = patterns('',
 	url(r'^humidity/([A-Za-z0-9]*)$', views.set_humidity, name='humidity'),
 	# url(r'^mode$', views.set_mode, name='mode'),
  	url(r'^programs/([A-Za-z0-9]*)$', views.programs, name='programs'),
- 	url(r'^climaduino/([A-Za-z0-9]*)$', views.climaduino, name='climaduino'),
     )
