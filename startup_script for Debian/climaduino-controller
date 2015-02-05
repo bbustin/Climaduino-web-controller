@@ -1,4 +1,10 @@
 #!/bin/bash
+### BEGIN INIT INFO
+# Provides:          Climaduino Controller
+# Short-Description: Control component of Climaduino system
+# Description:       Controls and allows users to interact with a network of environmental sensors.
+### END INIT INFO
+
 cd /home/pi/climaduino
 
 # Carry out specific functions when asked to by the system
@@ -9,7 +15,7 @@ case "$1" in
     ;;
   stop)
     echo "Stopping climaduino-controller"
-    echo "oops, can't do that"
+    sh stop_web_controller
     ;;
   *)
     echo "Usage: /etc/init.d/climaduino-controller {start|stop}"
