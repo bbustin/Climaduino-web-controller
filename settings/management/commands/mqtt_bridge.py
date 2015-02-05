@@ -21,7 +21,7 @@ class Command(BaseCommand):
 		print("Climaduino MQTT bridge started")
 		open_SocketServer('/tmp/climaduino_mqtt_bridge', ReceiveSettingsHandler)
 		seed_settings()
-		mqtt_connect("test.mosquitto.org")
+		mqtt_connect("localhost")
 		last_poll = time.time()
 		while 1:
 			client.loop(timeout=1)

@@ -2,7 +2,7 @@
 echo "Updating apt-get"
 apt-get update
 echo "Installing any missing pre-requisites from apt-get"
-apt-get install -y build-essential python-dev python-setuptools libcairo2-dev libpango1.0-dev libxml2-dev rrdtool librrd-dev
+apt-get install -y build-essential python-dev python-setuptools libcairo2-dev libpango1.0-dev libxml2-dev rrdtool librrd-dev mosquitto libnss-mdns screen
 echo "Running 'python setup.py develop'"
 python /vagrant/setup.py develop
 echo "cd into the /vagrant directory before beginning"
