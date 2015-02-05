@@ -80,6 +80,9 @@ def database_update(data):
 		if not device_object:
 			device_object = Device(name=device, zonename="Auto-added ({})".format(device))
 			device_object.save()
+			# if a device is auto-added, we need to add some default settings
+			setting = Setting(device=device_object, time=update_time, mode=9, fanMode=0, temperature=77, humidity=55)
+			setting.save()
 
 		try:
 			data_reading = data[device]['readings']
