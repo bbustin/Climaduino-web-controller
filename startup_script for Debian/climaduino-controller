@@ -1,16 +1,21 @@
 #!/bin/bash
-source /home/pi/bin/activate
+### BEGIN INIT INFO
+# Provides:          Climaduino Controller
+# Short-Description: Control component of Climaduino system
+# Description:       Controls and allows users to interact with a network of environmental sensors.
+### END INIT INFO
+
 cd /home/pi/climaduino
 
 # Carry out specific functions when asked to by the system
 case "$1" in
   start)
     echo "Starting climaduino-controller "
-    /usr/bin/screen -d -m -S data-logger python manage.py runserver 0.0.0.0:80
+    sh start_web_controller.sh
     ;;
   stop)
     echo "Stopping climaduino-controller"
-    echo "oops, can't do that"
+    sh stop_web_controller.sh
     ;;
   *)
     echo "Usage: /etc/init.d/climaduino-controller {start|stop}"

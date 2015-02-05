@@ -8,9 +8,9 @@
 {% block content %}
 		   <div class="ui-grid-a">
 	        	<div class="ui-block-a">
-	        		{% if settings.mode == 0 or settings.mode == 5 %}
+	        		{% if settings.mode == 0 or settings.mode == 5 or not settings %}
 	        		<h3 align="center">Temperature</h3>
-	        		<a href="{% url 'settings:temperature' device.identifier %}" data-role="button"><h1>{{ readings.temperature }}º</h1><hr /><h4>{{ settings.temperature }}º</h4></a>
+	        		<a href="{% url 'settings:temperature' device.name %}" data-role="button"><h1>{{ readings.temperature }}º</h1><hr /><h4>{{ settings.temperature }}º</h4></a>
 	        		{% endif %}
 					{% if settings.mode == 1 or settings.mode == 8 or settings.mode == 9 %}
 	        		<h3 align="center">Temperature</h3>
@@ -19,9 +19,9 @@
 
 				</div>
 				<div class="ui-block-b">
-					{% if settings.mode == 0 or settings.mode == 1 %}
+					{% if settings.mode == 0 or settings.mode == 1 or not settings %}
 					<h3 align="center">Humidity</h3>
-					<a href="{% url 'settings:humidity' device.identifier %}" data-role="button"><h1>{{ readings.humidity }}%</h1><hr /><h4>{{ settings.humidity }}%</h4></a>
+					<a href="{% url 'settings:humidity' device.name %}" data-role="button"><h1>{{ readings.humidity }}%</h1><hr /><h4>{{ settings.humidity }}%</h4></a>
 					{% endif %}
 					{% if settings.mode == 5 or settings.mode == 8 or settings.mode == 9 %}
 					<h3 align="center">Humidity</h3>
@@ -30,7 +30,7 @@
 				</div>
 			</div>
 		    {% if settings.currentlyRunning %}System Running{% endif %}
-			<form action="{% url 'settings:device_index' device.identifier %}" method="post">
+			<form action="{% url 'settings:device_index' device.name %}" method="post">
 				{% csrf_token %}
 				{{ form.as_p }}
 				<input type="submit" value="Submit" />

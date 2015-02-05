@@ -22,9 +22,9 @@
 	 
 	        <div data-role="footer" data-position="fixed">
 	            {% block footer %}
-            	<a href="{% url 'settings:device_index' device.identifier %}" data-icon="gear">Settings</a>
-            	<a href="{% url 'settings:programs' device.identifier %}" data-icon="grid">Programs</a>
-            	<a href="{% url 'history:index' device.identifier %}" data-icon="info">History</a>
+            	<a href="{% url 'settings:device_index' device.name %}" data-icon="gear">Settings</a>
+            	<a href="{% url 'settings:programs' device.name %}" data-icon="grid">Programs</a>
+            	<a href="{% url 'history:index' device.name %}" data-icon="info">History</a>
 	            {% endblock %}
 	        </div><!-- /footer -->
  

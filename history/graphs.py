@@ -7,8 +7,9 @@ try:
 except:
 	print("python-rrdtool library is not installed. Graphs will not be available.")
 
-def create_graphs(device_id):
-	rrd_file = "temp_humidity-%s.rrd" % device_id
+def create_graphs(device_name, directory=""):
+	device_name = str(device_name) #convert device_name from unicode to a normal string
+	rrd_file = "%stemp_humidity-%s.rrd" % (directory, device_name)
 
 	graph_type = {}
 	graph_type["temperature"] = {'data_sources': ['DEF:temperatureAvg=%s:temperature:AVERAGE' % rrd_file,
@@ -36,7 +37,7 @@ def create_graphs(device_id):
 
 	for graph in graph_type:
 		for time_period in time_periods:
-			image_name = "graph-%s-%s-%s.png" % (device_id, graph, time_period)
+			image_name = "graph-%s-%s-%s.png" % (device_name, graph, time_period)
 			image_names.append(image_name)
 			rrdtool.graph("./history/static/%s" % image_name,
 				"--start", "-%s" % time_period,
