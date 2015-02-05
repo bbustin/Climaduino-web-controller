@@ -1,12 +1,11 @@
 #!/bin/bash
-source /home/pi/bin/activate
 cd /home/pi/climaduino
 
 # Carry out specific functions when asked to by the system
 case "$1" in
   start)
     echo "Starting climaduino-controller "
-    /usr/bin/screen -d -m -S data-logger python manage.py runserver 0.0.0.0:80
+    sh start_web_controller.sh
     ;;
   stop)
     echo "Stopping climaduino-controller"

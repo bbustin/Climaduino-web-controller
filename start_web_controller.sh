@@ -16,5 +16,5 @@ echo "Starting component: programming_sentry"
 echo "-------------------------------------------------------------------------"
 echo "UI"
 echo "-------------------------------------------------------------------------"
-echo "Starting Climaduino web user interface listening on port 8080"
-/usr/bin/screen -d -m -S web_interface python manage.py runserver 0.0.0.0:8080
+echo "Starting Climaduino web user interface listening on port 80"
+/usr/bin/screen -d -m -S web_interface python manage.py runserver 0.0.0.0:80
