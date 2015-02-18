@@ -119,15 +119,21 @@ def database_update(data):
 		except KeyError:
 			pass # no status to update
 		else:
-			# update status information
-			status = Status.objects.filter(device__pk=device).last()
-			if not status:
-				status = Status(device=device_object, time=update_time, currentlyRunning=0, stateChangeAllowed=0)
-			status.time = update_time
-			status.source = 0
-			for attribute in data_status:
-				setattr(status, attribute, data_status[attribute])
-			status.save()
+			# check if communications lost...
+			if 'comm_lost' in data_status:
+				# if communication is lost, set all reading values to 0... may find a better way to handle this in future
+				reading = Reading(device=device_object, time=update_time, temperature=0, humidity=0)
+				reading.save()
+			else:
+				# update status information
+				status = Status.objects.filter(device__pk=device).last()
+				if not status:
+					status = Status(device=device_object, time=update_time, currentlyRunning=0, stateChangeAllowed=0)
+				status.time = update_time
+				status.source = 0
+				for attribute in data_status:
+					setattr(status, attribute, data_status[attribute])
+				status.save()
 
 ## MQTT handlers
 # The callback for when the client receives a CONNACK response from the server.
