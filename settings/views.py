@@ -1,5 +1,5 @@
 import json
-from django.http import HttpResponse, HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect, JsonResponse
 from django.shortcuts import render
 from django.forms import ModelForm
 # from django.forms.formsets import formset_factory
@@ -51,6 +51,13 @@ def device_index(request, device_name):
 			 'readings': current_readings,
 			 'settings': setting,
 			 'device': device})
+
+def device_readings(request, device_name):
+	device = Device.objects.get(pk=device_name)
+	current_readings = Reading.objects.filter(device__pk=device_name).last()
+	current_status = Status.objects.filter(device__pk=device_name).last()
+	data = {'temperature': current_readings.temperature, 'humidity': current_readings.humidity, 'currentlyRunning': current_status.currentlyRunning}
+	return JsonResponse(data)
 
 def index(request):
 	devices = Device.objects.all()
