@@ -1,6 +1,21 @@
 {% extends "base_template.html" %}
 {% block title %}Climaduino - {{device.zonename}}{% endblock %}
 {% block header %}
+	<script type="text/javascript">
+		function updateReadings() {
+
+		    $.ajax({
+		        url: "{% url 'settings:readings'  device.name%}",
+		        dataType: "json"
+		    }).success(function(data){
+		        $('#temperature').text(data.temperature);
+		        $('#humidity').text(data.humidity);
+		    });
+
+		    return false;
+		}
+		setInterval(function(){updateReadings()}, 5000);
+	</script>
 <a href="javascript:location.reload(true);" data-icon="refresh">Refresh</a>
 <h1>{{device.zonename}}</h1>
 <a href="{% url 'settings:index' %}" data-icon="grid">Zones</a>
