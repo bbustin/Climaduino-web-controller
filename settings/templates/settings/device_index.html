@@ -2,18 +2,25 @@
 {% block title %}Climaduino - {{device.zonename}}{% endblock %}
 {% block header %}
 	<script type="text/javascript">
-		setInterval(function() {
+		function updateReadings() {
 
 		    $.ajax({
 		        url: "{% url 'settings:readings'  device.name%}",
-		        dataType: "json"
-		    }).success(function(data){
-		        $('#temperature').text(data.temperature);
-		        $('#humidity').text(data.humidity);
-		    });
+		        dataType: "json",
+		        success:
+			        function(data){
+				        $('#temperature').text(data.temperature);
+				        $('#humidity').text(data.humidity);
+		    		},
+		    	complete:
+		    		function(){
+		    			setTimeout(updateReadings, 5000);
+		    		}
+		    }).success();
 
 		    return false;
-		}, 5000);
+		}
+		setTimeout(updateReadings, 5000);
 	</script>
 <a href="javascript:location.reload(true);" data-icon="refresh">Refresh</a>
 <h1>{{device.zonename}}</h1>
