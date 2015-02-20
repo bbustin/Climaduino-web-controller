@@ -2,7 +2,7 @@
 {% block title %}Climaduino - {{device.zonename}}{% endblock %}
 {% block header %}
 	<script type="text/javascript">
-		function updateReadings() {
+		setInterval(updateReadings() {
 
 		    $.ajax({
 		        url: "{% url 'settings:readings'  device.name%}",
@@ -14,7 +14,7 @@
 
 		    return false;
 		}
-		setInterval(function(){updateReadings()}, 5000);
+		}, 5000);
 	</script>
 <a href="javascript:location.reload(true);" data-icon="refresh">Refresh</a>
 <h1>{{device.zonename}}</h1>
