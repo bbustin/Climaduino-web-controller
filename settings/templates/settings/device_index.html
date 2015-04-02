@@ -46,7 +46,6 @@
 {% endblock %}
 {% block content %}
            <div class="ui-grid-a">
-                System running: <span id="currentlyRunning">settings.currentlyRunning</span>
                 <div class="ui-block-a">
                     {% if settings.mode == 0 or settings.mode == 5 or not settings %}
                     <h3 align="center">Temperature</h3>
@@ -69,6 +68,7 @@
                     {% endif %}
                 </div>
             </div>
+            System running: <span id="currentlyRunning">{{ settings.currentlyRunning }}</span>
             <form action="{% url 'settings:device_index' device.name %}" method="post">
                 {% csrf_token %}
                 {{ form.as_p }}
