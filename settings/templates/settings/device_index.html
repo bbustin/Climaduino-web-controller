@@ -22,7 +22,7 @@
         function updateSettings() {
 
             $.ajax({
-                url: "{% url 'settings:readings'  device.name%}",
+                url: "{% url 'settings:settings'  device.name%}",
                 dataType: "json",
                 success:
                     function(data){
