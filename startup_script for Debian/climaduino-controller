@@ -17,8 +17,13 @@ case "$1" in
     echo "Stopping climaduino-controller"
     sh stop_web_controller.sh
     ;;
+    restart)
+    echo "Restarting climaduino-controller"
+    sh stop_web_controller.sh
+    sh start_web_controller.sh
+    ;;
   *)
-    echo "Usage: /etc/init.d/climaduino-controller {start|stop}"
+    echo "Usage: /etc/init.d/climaduino-controller {start|stop|restart}"
     exit 1
     ;;
 esac
