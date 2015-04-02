@@ -45,11 +45,13 @@ def device_index(request, device_name):
 		return HttpResponseRedirect(reverse('settings:device_index', args=[device.name]))
 	elif request.method == 'GET':
 		current_readings = Reading.objects.filter(device__pk=device_name).last()
+		current_status = Status.objects.filter(device__pk=device_name).last()
 		form = SettingForm(instance=setting)
 		return render(request, 'settings/device_index.html',
 			{'form': form,
 			 'readings': current_readings,
 			 'settings': setting,
+			 'status': current_status,
 			 'device': device})
 
 def device_readings(request, device_name):

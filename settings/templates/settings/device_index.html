@@ -68,7 +68,7 @@
                     {% endif %}
                 </div>
             </div>
-            System running: <span id="currentlyRunning">{{ settings.currentlyRunning }}</span>
+            System running: <span id="currentlyRunning">{{ status.currentlyRunning }}</span>
             <form action="{% url 'settings:device_index' device.name %}" method="post">
                 {% csrf_token %}
                 {{ form.as_p }}
