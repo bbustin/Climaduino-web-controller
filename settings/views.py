@@ -59,6 +59,11 @@ def device_readings(request, device_name):
 	data = {'temperature': current_readings.temperature, 'humidity': current_readings.humidity, 'currentlyRunning': current_status.currentlyRunning}
 	return JsonResponse(data)
 
+def device_settings(request, device_name):
+	device = Device.objects.get(pk=device_name)
+	current_settings = Setting.objects.filter(device__pk=device_name).last()
+	return JsonResponse(current_settings)
+
 def index(request):
 	devices = Device.objects.all()
 	if request.method == 'GET':
