@@ -81,7 +81,7 @@ def database_update(data):
 			device_object = Device(name=device, zonename="Auto-added ({})".format(device))
 			device_object.save()
 			# if a device is auto-added, we need to add some default settings
-			setting = Setting(device=device_object, time=update_time, mode=9, fanMode=0, temperature=77, humidity=55)
+			setting = Setting(device=device_object, time=update_time, mode=9, fanMode=0, temperature=77, humidity=55, source=0)
 			setting.save()
 
 		try:
@@ -101,17 +101,16 @@ def database_update(data):
 		try:
 			data_settings = data[device]['settings']
 		except KeyError:
-			pass # no status to update
+			pass # no settings to update
 		else:
 			# update status information
 			setting = Setting.objects.filter(device__pk=device).last()
 			if not setting:
-				setting = Setting(device=device_object, time=update_time, mode=0, fanMode=0, temperature=0, humidity=0)
+				setting = Setting(device=device_object, time=update_time, mode=0, fanMode=0, temperature=0, humidity=0, source=0)
 			setting.time = update_time
-			# 0 means setting came from MQTT
-			setting.source = 0
 			for attribute in data_settings:
 				setattr(setting, attribute, data_settings[attribute])
+			setting.source = 0
 			setting.save()
 
 
@@ -131,7 +130,6 @@ def database_update(data):
 				if not status:
 					status = Status(device=device_object, time=update_time, currentlyRunning=0, stateChangeAllowed=0)
 				status.time = update_time
-				status.source = 0
 				for attribute in data_status:
 					setattr(status, attribute, data_status[attribute])
 				status.save()

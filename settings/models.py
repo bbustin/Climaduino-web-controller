@@ -31,7 +31,7 @@ class Setting(models.Model):
 	temperature = models.IntegerField(default=77)
 	humidity = models.IntegerField(default=55)
 	def __unicode__(self):
-		return("%s - \n\tmode: %d\n\ttemperature: %d\n\thumidity: %d" % (self.time, self.mode, self.temperature, self.humidity))
+		return("%s - \n\tmode: %d\n\ttemperature: %d\n\thumidity: %d\n\tsource: %d" % (self.time, self.mode, self.temperature, self.humidity, self.source))
 	def json_output(self):
 		return({self.device.name: {'settings': {'mode': self.mode, 'fanMode': self.fanMode, 'tempSetPoint': self.temperature, 'humiditySetPoint': self.humidity}}})
 	def send_rrdtool(self):
