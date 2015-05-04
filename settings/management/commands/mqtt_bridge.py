@@ -103,13 +103,18 @@ def database_update(data):
 		except KeyError:
 			pass # no settings to update
 		else:
+			settings_mapping = {'tempSetPoint':'temperature', 'humiditySetPoint':'humidity'}
 			# update status information
 			setting = Setting.objects.filter(device__pk=device).last()
 			if not setting:
 				setting = Setting(device=device_object, time=update_time, mode=0, fanMode=0, temperature=0, humidity=0, source=0)
 			setting.time = update_time
 			for attribute in data_settings:
-				setattr(setting, attribute, data_settings[attribute])
+				try:
+					api_attribute = settings_mapping[attribute]
+				except KeyError:
+					api_attribute = attribute
+				setattr(setting, api_attribute, data_settings[attribute])
 			setting.source = 0
 			setting.save()
 
