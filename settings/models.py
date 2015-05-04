@@ -23,7 +23,7 @@ class Device(models.Model):
 class Setting(models.Model):
 	device = models.ForeignKey("Device")
 	time = models.DateTimeField('last change')
-	source_choices = ((0, 'Climaduino'),(1, 'Controller'), (3, 'Program'))
+	source_choices = ((0, 'MQTT'),(1, 'Controller'), (3, 'Program'))
 	source = models.IntegerField('source of last change', choices=source_choices, default=0)
 	mode_choices = ((0, 'Cooling'), (1, 'Humidity Control'), (5, 'Heating'), (9, 'Off'))
 	mode = models.IntegerField(choices=mode_choices, default=0)
@@ -45,7 +45,9 @@ class Setting(models.Model):
 		# send the settings to the mqtt_bridge so the Climaduino will receive them and to the rrd_tool logger
 		settings = self.json_output()
 		self.send_rrdtool()
-		self.send_mqtt_bridge()
+		# As long as the source of the change did not come from MQTT, send the setting to MQTT
+		if (self.source != 0):
+			self.send_mqtt_bridge()
 		super(Setting, self).save(*args, **kwargs) # save the DB record
 
 class Status(models.Model):

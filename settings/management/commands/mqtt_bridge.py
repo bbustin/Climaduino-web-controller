@@ -108,6 +108,7 @@ def database_update(data):
 			if not setting:
 				setting = Setting(device=device_object, time=update_time, mode=0, fanMode=0, temperature=0, humidity=0)
 			setting.time = update_time
+			# 0 means setting came from MQTT
 			setting.source = 0
 			for attribute in data_settings:
 				setattr(setting, attribute, data_settings[attribute])
@@ -142,6 +143,7 @@ def on_connect(client, userdata, flags, rc):
 	# reconnect then subscriptions will be renewed.
 	client.subscribe("climaduino/+/readings/#")
 	client.subscribe("climaduino/+/status/#")
+	client.subscribe("climaduino/+/settings/#")
 	print("Connected to MQTT broker")
 
 # The callback for when a PUBLISH message is received from the server.
