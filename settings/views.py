@@ -39,6 +39,8 @@ def device_index(request, device_name):
 			if setting:
 				setting.mode = form.cleaned_data['mode']
 				setting.fanMode = form.cleaned_data['fanMode']
+				# setting came from controller
+				setting.source = 1
 			else:
 				setting = Setting(device=device, time=update_time, mode=form.cleaned_data['mode'], fanMode=form.cleaned_data['fanMode'])
 			setting.save()
@@ -81,6 +83,8 @@ def set_temperature(request, device_name):
 		if form.is_valid():
 			if 'temperature' in form.cleaned_data:
 				setting.temperature = form.cleaned_data['temperature']
+				# setting came from controller
+				setting.source = 1
 				setting.save()
 		return HttpResponseRedirect(reverse('settings:device_index', args=[device.name]))
 	if request.method == 'GET':
@@ -99,6 +103,8 @@ def set_humidity(request, device_name):
 		if form.is_valid():
 			if 'humidity' in form.cleaned_data:
 				setting.humidity = form.cleaned_data['humidity']
+				# setting came from controller
+				setting.source = 1
 				setting.save()
 		return HttpResponseRedirect(reverse('settings:device_index', args=([device.name])))
 	if request.method == 'GET':

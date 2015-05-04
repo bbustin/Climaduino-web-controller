@@ -24,7 +24,7 @@ class Setting(models.Model):
 	device = models.ForeignKey("Device")
 	time = models.DateTimeField('last change')
 	source_choices = ((0, 'MQTT'),(1, 'Controller'), (3, 'Program'))
-	source = models.IntegerField('source of last change', choices=source_choices, default=0)
+	source = models.IntegerField('source of last change', choices=source_choices, default=1)
 	mode_choices = ((0, 'Cooling'), (1, 'Humidity Control'), (5, 'Heating'), (9, 'Off'))
 	mode = models.IntegerField(choices=mode_choices, default=0)
 	fanMode = models.BooleanField(default=False)
@@ -46,7 +46,7 @@ class Setting(models.Model):
 		settings = self.json_output()
 		self.send_rrdtool()
 		# As long as the source of the change did not come from MQTT, send the setting to MQTT
-		if (self.source != 0):
+		if (self.source is not 0):
 			self.send_mqtt_bridge()
 		super(Setting, self).save(*args, **kwargs) # save the DB record
 
