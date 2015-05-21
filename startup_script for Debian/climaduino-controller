@@ -1,6 +1,8 @@
 #!/bin/bash
 ### BEGIN INIT INFO
 # Provides:          Climaduino Controller
+# Default-Start:  2 3 4 5
+# Default-Stop:   0 1 6
 # Short-Description: Control component of Climaduino system
 # Description:       Controls and allows users to interact with a network of environmental sensors.
 ### END INIT INFO
